@@ -1,0 +1,15 @@
+{
+  "name": "nodebox",
+  "version": "1.0.0",
+  "description": "Node.js Dropbox Client",
+  "main": "app.js",
+  "author": "Alexander Hofbauer",
+  "license": "MIT",
+  "dependencies": {
+    "dropbox": "^2.5.12",
+    "fs": "^0.0.1-security",
+    "lodash": "^4.17.4",
+    "os": "^0.1.1",
+    "prompt": "^1.0.0"
+  }
+}
