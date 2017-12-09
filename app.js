@@ -5,28 +5,49 @@ const Dropbox = require('dropbox')
 const prompt = require('prompt')
 const _ = require('lodash')
 
-const util = require('./util')
-
 let dbx = new Dropbox()
 let filelist = []
 let _devPath = '/.dotfiles'
 let _settingsPath = '~/.config/nodebox.json'
+let _dbPath = '~/.config/nodebox_db.json'
 let _storagePath = '~/nodebox'
 let _settings = {}
+let _db
+
+const util = require('./util')(dbx)
+const utilDownload = require('./util/downloadFileList')(dbx, filelist)
 
 /**
- * Setup folders
+ * Setup paths
  */
 _settingsPath = util.expandTilde(_settingsPath)
 console.log(_settingsPath)
 _storagePath = util.expandTilde(_storagePath)
 console.log(_storagePath)
+_dbPath = util.expandTilde(_dbPath)
+console.log(_dbPath)
 
-_setting = util.readConfigFile(_settingsPath)
-util.writeConfigFile(_settingsPath, _settings)
-util.mkdirIfNotExists(_storagePath)
-
+/**
+ * Read config file
+ */
+if (fs.existsSync(_settingsPath)) {
+    _settings = util.readConfigFile(_settingsPath)
+} else {
+    util.writeConfigFile(_settingsPath, _settings)
+}
 console.log(_settings)
+
+/**
+ * Read db file
+ */
+if (fs.existsSync(_dbPath)) {
+    _db = util.readConfigFile(_dbPath)
+}
+
+/**
+ * Setup storage folder
+ */
+util.mkdirIfNotExists(_storagePath)
 
 /**
  * Get Access Token
@@ -45,39 +66,19 @@ if (!_settings.accessToken) {
         }
     }, (error, result) => {
         _settings.accessToken = result.accessToken
+        _settings.path = result.path || _devPath
         util.writeConfigFile(_settingsPath, _settings)
-
-        dbx.setAccessToken(result.accessToken)
-        console.log('Access token accepted')
-
-        downloadFileList(result.path)
     })
 }
 
 /**
+ * Set access token from config file or prompt
+ */
+util.setAccessToken(_settings, dbx)
+
+/**
  * Download File List
  */
-let downloadFileList = (path) => {
-    console.log('initial: filesListFolder')
-    dbx.filesListFolder({
-        path: path || _devPath,
-        recursive: true
-    })
-    .then(function (response) {
-        util.handleListFolderEntries(filelist, response.entries, response.has_more, response.cursor)
-    })
-    .catch(function (err) {
-        util.handleError(err)
-    })
-}
-
-let downloadFileListContinue = (cursor) => {
-    console.log('filesListFolerContinue')
-    dbx.filesListFolderContinue({cursor: cursor})
-        .then(function (response) {
-            util.handleListFolderEntries(filelist, response.entries, response.has_more, response.cursor)
-        })
-        .catch(function(err) {
-            util.handleError(err)
-        })
-}
+utilDownload.downloadFileList(_settings.path, function() {
+    console.log(filelist.length)
+})
