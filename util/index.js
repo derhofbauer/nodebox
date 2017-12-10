@@ -18,7 +18,7 @@ module.exports = (dbx) => {
     module.writeConfigFile = (file, jsonContent) => {
         let content = JSON.stringify(jsonContent) || ''
 
-        fs.writeFileSync(file, content, {flag: 'w+'}, function(err) {
+        fs.writeFile(file, content, {flag: 'w+'}, function(err) {
             console.log(err)
         })
     }

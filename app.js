@@ -12,10 +12,10 @@ let _settingsPath = '~/.config/nodebox.json'
 let _dbPath = '~/.config/nodebox_db.json'
 let _storagePath = '~/nodebox'
 let _settings = {}
-let _db
+let _db = []
 
 const util = require('./util')(dbx)
-const utilDownload = require('./util/downloadFileList')(dbx, filelist)
+const utilDownload = require('./util/downloadFileList')(dbx, filelist, _db)
 
 /**
  * Setup paths
@@ -42,6 +42,8 @@ console.log(_settings)
  */
 if (fs.existsSync(_dbPath)) {
     _db = util.readConfigFile(_dbPath)
+} else {
+    util.writeConfigFile(_dbPath, _db)
 }
 
 /**
@@ -77,8 +79,23 @@ if (!_settings.accessToken) {
 util.setAccessToken(_settings, dbx)
 
 /**
- * Download File List
+ * setInterval
  */
-utilDownload.downloadFileList(_settings.path, function() {
-    console.log(filelist.length)
+let daemon = setInterval(function() {
+    /**
+     * Download File List
+     */
+    utilDownload.downloadFileList(_settings.path, function(filelist) {
+        _db = filelist
+        util.writeConfigFile(_dbPath, _db)
+
+        console.log(_db)
+    })
+}, 1000 * 60)
+
+/**
+ * Download files
+ */
+utilDownload.downloadWorker(filelist, function(path) {
+    console.log(path + "downloaded.")
 })
