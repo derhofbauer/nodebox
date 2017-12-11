@@ -6,8 +6,9 @@ const prompt = require('prompt')
 
 let dbx = new Dropbox()
 let _devPath = '/.dotfiles/testfolder'
-let _settingsPath = '~/.config/nodebox.json'
-let _dbPath = '~/.config/nodebox_db.json'
+let _settingsFolder = '~/.config/nodebox/'
+let _settingsPath = _settingsFolder + 'nodebox.json'
+let _dbPath = _settingsFolder + 'nodebox_db.json'
 let _storagePath = '~/nodebox'
 let _settings = {}
 let _db = []
@@ -22,12 +23,19 @@ const ServerFileListWorker = require('./worker/ServerFileListWorker.js')
 /**
  * Setup paths
  */
+_settingsFolder = path.expandTilde(_settingsFolder)
+console.log(_settingsFolder)
 _settingsPath = path.expandTilde(_settingsPath)
 console.log(_settingsPath)
 _storagePath = path.expandTilde(_storagePath)
 console.log(_storagePath)
 _dbPath = path.expandTilde(_dbPath)
 console.log(_dbPath)
+
+/**
+ * Setup settings folder
+ */
+fs.mkdirIfNotExists(_settingsFolder)
 
 /**
  * Read config file
@@ -53,6 +61,46 @@ if (fs.existsSync(_dbPath)) {
  */
 fs.mkdirIfNotExists(_storagePath)
 
+
+
+/**
+ * @todo: refactor this to a beautiful class with a .go()/.start() method. This has the benefit of being able to create
+ * @todo: the nodebox instance outside of the prompt logic but starting it inside when the prompt has finished or no
+ * @todo: prompt is required since we got everything we need.
+ */
+let go = function run() {
+    /**
+     * Set access token from config file or prompt
+     */
+    dbx.setAccessToken(_settings.accessToken)
+
+
+    /**
+     * start serverFileListWorker
+     * + fetch filelist from server (keep only in memory, since it is fetched on every startup)
+     * + subscribe to longpoll endpoint and fetch changes, as soon as there are some to server filelist
+     */
+    let serverFileListWorker = new ServerFileListWorker(dbx, _settings.path, true)
+
+
+    /**
+     * start localFileListWorker
+     * + create/update local index by analysing filesystem (including file hashes) and store to file
+     */
+
+    /**
+     * start mergeWorker
+     * + based on filelist from server and local index create a download queue for downloadWorker
+     */
+
+    /**
+     * start downloadWorker
+     * + download files from list created by mergeWorker
+     */
+}
+
+
+
 /**
  * Get Access Token
  */
@@ -72,33 +120,9 @@ if (!_settings.accessToken) {
         _settings.accessToken = result.accessToken
         _settings.path = result.path || _settings.path || _devPath
         configFile.writeConfigFile(_settingsPath, _settings)
+
+        go()
     })
+} else {
+    go()
 }
-
-/**
- * Set access token from config file or prompt
- */
-dbx.setAccessToken(_settings.accessToken)
-
-
-/**
- * start serverFileListWorker
- * + fetch filelist from server (keep only in memory, since it is fetched on every startup)
- * + subscribe to longpoll endpoint and fetch changes, as soon as there are some to server filelist
- */
-let serverFileListWorker = new ServerFileListWorker(dbx, _settings.path, true)
-
-/**
- * start localFileListWorker
- * + create/update local index by analysing filesystem (including file hashes) and store to file
- */
-
-/**
- * start mergeWorker
- * + based on filelist from server and local index create a download queue for downloadWorker
- */
-
-/**
- * start downloadWorker
- * + download files from list created by mergeWorker
- */
