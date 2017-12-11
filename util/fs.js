@@ -2,8 +2,10 @@
 
 const fs = require('fs')
 
-module.exports.mkdirIfNotExists = (dir) => {
+fs.mkdirIfNotExists = (dir) => {
     if (!fs.existsSync(dir)){
         fs.mkdirSync(dir)
     }
 }
+
+module.exports = fs

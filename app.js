@@ -1,9 +1,8 @@
-//'use strict'
+'use strict'
 
-const fs = require('fs')
 const Dropbox = require('dropbox')
 const prompt = require('prompt')
-const _ = require('lodash')
+// const _ = require('lodash')
 
 let dbx = new Dropbox()
 let filelist = []
@@ -14,19 +13,19 @@ let _storagePath = '~/nodebox'
 let _settings = {}
 let _db = []
 
-const utilDownload = require('./lib/downloadFileList')(dbx, filelist, _db)
-const fsExtended = require('./util/fsExtended')
-const pathExtended = require('./util/pathExtended')
+// const utilDownload = require('./lib/downloadFileList')(dbx, filelist, _db)
+const fs = require('./util/fs')
+const path = require('./util/path')
 const configFile = require('./util/configFile')
 
 /**
  * Setup paths
  */
-_settingsPath = pathExtended.expandTilde(_settingsPath)
+_settingsPath = path.expandTilde(_settingsPath)
 console.log(_settingsPath)
-_storagePath = pathExtended.expandTilde(_storagePath)
+_storagePath = path.expandTilde(_storagePath)
 console.log(_storagePath)
-_dbPath = pathExtended.expandTilde(_dbPath)
+_dbPath = path.expandTilde(_dbPath)
 console.log(_dbPath)
 
 /**
@@ -51,7 +50,7 @@ if (fs.existsSync(_dbPath)) {
 /**
  * Setup storage folder
  */
-fsExtended.mkdirIfNotExists(_storagePath)
+fs.mkdirIfNotExists(_storagePath)
 
 /**
  * Get Access Token
