@@ -14,26 +14,28 @@ let _storagePath = '~/nodebox'
 let _settings = {}
 let _db = []
 
-const util = require('./util')(dbx)
-const utilDownload = require('./util/downloadFileList')(dbx, filelist, _db)
+const utilDownload = require('./lib/downloadFileList')(dbx, filelist, _db)
+const fsExtended = require('./util/fsExtended')
+const pathExtended = require('./util/pathExtended')
+const configFile = require('./util/configFile')
 
 /**
  * Setup paths
  */
-_settingsPath = util.expandTilde(_settingsPath)
+_settingsPath = pathExtended.expandTilde(_settingsPath)
 console.log(_settingsPath)
-_storagePath = util.expandTilde(_storagePath)
+_storagePath = pathExtended.expandTilde(_storagePath)
 console.log(_storagePath)
-_dbPath = util.expandTilde(_dbPath)
+_dbPath = pathExtended.expandTilde(_dbPath)
 console.log(_dbPath)
 
 /**
  * Read config file
  */
 if (fs.existsSync(_settingsPath)) {
-    _settings = util.readConfigFile(_settingsPath)
+    _settings = configFile.readConfigFile(_settingsPath)
 } else {
-    util.writeConfigFile(_settingsPath, _settings)
+    configFile.writeConfigFile(_settingsPath, _settings)
 }
 console.log(_settings)
 
@@ -41,15 +43,15 @@ console.log(_settings)
  * Read db file
  */
 if (fs.existsSync(_dbPath)) {
-    _db = util.readConfigFile(_dbPath)
+    _db = configFile.readConfigFile(_dbPath)
 } else {
-    util.writeConfigFile(_dbPath, _db)
+    configFile.writeConfigFile(_dbPath, _db)
 }
 
 /**
  * Setup storage folder
  */
-util.mkdirIfNotExists(_storagePath)
+fsExtended.mkdirIfNotExists(_storagePath)
 
 /**
  * Get Access Token
@@ -69,14 +71,15 @@ if (!_settings.accessToken) {
     }, (error, result) => {
         _settings.accessToken = result.accessToken
         _settings.path = result.path || _devPath
-        util.writeConfigFile(_settingsPath, _settings)
+        configFile.writeConfigFile(_settingsPath, _settings)
     })
 }
 
 /**
  * Set access token from config file or prompt
  */
-util.setAccessToken(_settings, dbx)
+dbx.setAccessToken(_settings.accessToken)
+console.log('Access token accepted')
 
 /**
  * setInterval
@@ -87,7 +90,7 @@ let daemon = setInterval(function() {
      */
     utilDownload.downloadFileList(_settings.path, function(filelist) {
         _db = filelist
-        util.writeConfigFile(_dbPath, _db)
+        configFile.writeConfigFile(_dbPath, _db)
 
         console.log(_db)
     })
