@@ -1,10 +1,11 @@
 'use strict'
 
 const fs = require('fs')
+const errorHandler = require('./errorHandler')
 
 module.exports = {
     writeConfigFile: (file, configObject) => {
-        let content = JSON.stringify(jsonContent) || ''
+        let content = JSON.stringify(configObject) || ''
 
         fs.writeFile(file, content, {flag: 'w+'}, function(err) {
             errorHandler.handle(err)

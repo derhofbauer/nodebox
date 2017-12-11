@@ -5,8 +5,7 @@ const prompt = require('prompt')
 // const _ = require('lodash')
 
 let dbx = new Dropbox()
-let filelist = []
-let _devPath = '/.dotfiles'
+let _devPath = '/.dotfiles/testfolder'
 let _settingsPath = '~/.config/nodebox.json'
 let _dbPath = '~/.config/nodebox_db.json'
 let _storagePath = '~/nodebox'
@@ -17,6 +16,8 @@ let _db = []
 const fs = require('./util/fs')
 const path = require('./util/path')
 const configFile = require('./util/configFile')
+
+const ServerFileListWorker = require('./worker/ServerFileListWorker.js')
 
 /**
  * Setup paths
@@ -69,7 +70,7 @@ if (!_settings.accessToken) {
         }
     }, (error, result) => {
         _settings.accessToken = result.accessToken
-        _settings.path = result.path || _devPath
+        _settings.path = result.path || _settings.path || _devPath
         configFile.writeConfigFile(_settingsPath, _settings)
     })
 }
@@ -78,26 +79,26 @@ if (!_settings.accessToken) {
  * Set access token from config file or prompt
  */
 dbx.setAccessToken(_settings.accessToken)
-console.log('Access token accepted')
+
 
 /**
- * setInterval
+ * start serverFileListWorker
+ * + fetch filelist from server (keep only in memory, since it is fetched on every startup)
+ * + subscribe to longpoll endpoint and fetch changes, as soon as there are some to server filelist
  */
-let daemon = setInterval(function() {
-    /**
-     * Download File List
-     */
-    utilDownload.downloadFileList(_settings.path, function(filelist) {
-        _db = filelist
-        configFile.writeConfigFile(_dbPath, _db)
-
-        console.log(_db)
-    })
-}, 1000 * 60)
+let serverFileListWorker = new ServerFileListWorker(dbx, _settings.path, true)
 
 /**
- * Download files
+ * start localFileListWorker
+ * + create/update local index by analysing filesystem (including file hashes) and store to file
  */
-utilDownload.downloadWorker(filelist, function(path) {
-    console.log(path + "downloaded.")
-})
+
+/**
+ * start mergeWorker
+ * + based on filelist from server and local index create a download queue for downloadWorker
+ */
+
+/**
+ * start downloadWorker
+ * + download files from list created by mergeWorker
+ */
