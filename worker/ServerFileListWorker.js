@@ -15,10 +15,12 @@ module.exports = class ServerFileListWorker {
     }
 
     this.last_cursor = ''
+    this._indexing = false
     this._longpolling = false
   }
 
   fetchFileListAndKeepUpdated () {
+    this._indexing = true
     this.dbx.filesListFolder({
       path: this.path,
       recursive: true,
@@ -30,6 +32,8 @@ module.exports = class ServerFileListWorker {
 
       if (response.has_more) {
         this.fetchFileListContinue()
+      } else {
+        this._indexing = false
       }
     }).catch((err) => {
       errorHandler.handle(err)
@@ -37,13 +41,16 @@ module.exports = class ServerFileListWorker {
   }
 
   fetchFileListContinue () {
+    this._indexing = true
     this.dbx.filesListFolderContinue({
       cursor: this.last_cursor
     }).then((response) => {
       // console.log('ServerFileListWorker:fetchFileListContinue')
+      console.log(this.last_cursor)
       if (response.has_more) {
         this.fetchFileListContinue()
       } else {
+          this._indexing = false
           this._longpolling = false
       }
 
@@ -117,6 +124,10 @@ module.exports = class ServerFileListWorker {
       this._longpolling = false
       errorHandler.handle(err)
     })
+  }
+
+  isIndexing () {
+    return this._indexing
   }
 
 }

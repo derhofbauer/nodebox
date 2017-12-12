@@ -2,8 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f7c1d6f4-8db5-4393-ac8f-bbc7d1e52795" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/app.js" afterPath="$PROJECT_DIR$/app.js" />
       <change beforePath="$PROJECT_DIR$/worker/LocalFileListWorker.js" afterPath="$PROJECT_DIR$/worker/LocalFileListWorker.js" />
+      <change beforePath="$PROJECT_DIR$/worker/ServerFileListWorker.js" afterPath="$PROJECT_DIR$/worker/ServerFileListWorker.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -20,38 +22,18 @@
       <file leaf-file-name="app.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="428">
-              <caret line="83" column="81" lean-forward="false" selection-start-line="83" selection-start-column="81" selection-end-line="83" selection-end-column="81" />
+            <state relative-caret-position="392">
+              <caret line="96" column="7" lean-forward="true" selection-start-line="96" selection-start-column="7" selection-end-line="96" selection-end-column="7" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="LocalFileListWorker.js" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/worker/LocalFileListWorker.js">
+      <file leaf-file-name="MergeWorker.js" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/worker/MergeWorker.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1296">
-              <caret line="72" column="30" lean-forward="false" selection-start-line="72" selection-start-column="30" selection-end-line="72" selection-end-column="30" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="errorHandler.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/util/errorHandler.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="72">
-              <caret line="4" column="1" lean-forward="true" selection-start-line="4" selection-start-column="1" selection-end-line="4" selection-end-column="1" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="ServerFileListWorker.js" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/worker/ServerFileListWorker.js">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="342">
-              <caret line="56" column="64" lean-forward="true" selection-start-line="56" selection-start-column="4" selection-end-line="56" selection-end-column="64" />
+            <state relative-caret-position="306">
+              <caret line="17" column="5" lean-forward="false" selection-start-line="17" selection-start-column="5" selection-end-line="17" selection-end-column="5" />
               <folding />
             </state>
           </provider>
@@ -89,13 +71,15 @@
         <option value="$PROJECT_DIR$/config/index.js" />
         <option value="$PROJECT_DIR$/util/fsExtended.js" />
         <option value="$PROJECT_DIR$/util/pathExtended.js" />
-        <option value="$PROJECT_DIR$/worker/ServerFileListWorker.js" />
         <option value="$PROJECT_DIR$/util/fs.js" />
         <option value="$PROJECT_DIR$/util/path.js" />
         <option value="$PROJECT_DIR$/util/errorHandler.js" />
         <option value="$PROJECT_DIR$/util/configFile.js" />
-        <option value="$PROJECT_DIR$/app.js" />
         <option value="$PROJECT_DIR$/worker/LocalFileListWorker.js" />
+        <option value="$PROJECT_DIR$/worker/mergeWorker.js" />
+        <option value="$PROJECT_DIR$/app.js" />
+        <option value="$PROJECT_DIR$/worker/ServerFileListWorker.js" />
+        <option value="$PROJECT_DIR$/worker/MergeWorker.js" />
       </list>
     </option>
   </component>
@@ -259,12 +243,12 @@
       <workItem from="1512993527426" duration="1614000" />
       <workItem from="1513021687620" duration="6204000" />
       <workItem from="1513031849994" duration="1523000" />
-      <workItem from="1513067136639" duration="5203000" />
+      <workItem from="1513067136639" duration="6603000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="27493000" />
+    <option name="totallyTimeSpent" value="28893000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="27" width="1920" height="1050" extended-state="6" />
@@ -534,14 +518,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/util/errorHandler.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="72">
-          <caret line="4" column="1" lean-forward="true" selection-start-line="4" selection-start-column="1" selection-end-line="4" selection-end-column="1" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/.config/nodebox/nodebox_db.json">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -558,26 +534,42 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app.js">
+    <entry file="file://$PROJECT_DIR$/util/errorHandler.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="428">
-          <caret line="83" column="81" lean-forward="false" selection-start-line="83" selection-start-column="81" selection-end-line="83" selection-end-column="81" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/worker/ServerFileListWorker.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="342">
-          <caret line="56" column="64" lean-forward="true" selection-start-line="56" selection-start-column="4" selection-end-line="56" selection-end-column="64" />
+        <state relative-caret-position="72">
+          <caret line="4" column="1" lean-forward="true" selection-start-line="4" selection-start-column="1" selection-end-line="4" selection-end-column="1" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/worker/LocalFileListWorker.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1296">
-          <caret line="72" column="30" lean-forward="false" selection-start-line="72" selection-start-column="30" selection-end-line="72" selection-end-column="30" />
+        <state relative-caret-position="788">
+          <caret line="76" column="29" lean-forward="false" selection-start-line="76" selection-start-column="29" selection-end-line="76" selection-end-column="29" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/worker/ServerFileListWorker.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="738">
+          <caret line="41" column="0" lean-forward="true" selection-start-line="41" selection-start-column="0" selection-end-line="41" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="392">
+          <caret line="96" column="7" lean-forward="true" selection-start-line="96" selection-start-column="7" selection-end-line="96" selection-end-column="7" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/worker/MergeWorker.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="306">
+          <caret line="17" column="5" lean-forward="false" selection-start-line="17" selection-start-column="5" selection-end-line="17" selection-end-column="5" />
           <folding />
         </state>
       </provider>

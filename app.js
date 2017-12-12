@@ -20,6 +20,7 @@ const configFile = require('./util/configFile')
 
 const ServerFileListWorker = require('./worker/ServerFileListWorker')
 const LocalFileListWorker = require('./worker/LocalFileListWorker')
+const MergeWorker = require('./worker/MergeWorker')
 
 /**
  * Setup paths
@@ -94,6 +95,7 @@ let go = function run() {
      * start mergeWorker
      * + based on filelist from server and local index create a download queue for downloadWorker
      */
+    let mergeWorker = new MergeWorker(serverFileListWorker, localFileListWorker)
 
     /**
      * start downloadWorker

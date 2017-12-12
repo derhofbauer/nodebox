@@ -73,4 +73,8 @@ module.exports = class LocalFileListWorker {
         this._indexing = false
     }
 
+    isIndexing() {
+        return this._indexing
+    }
+
 }
