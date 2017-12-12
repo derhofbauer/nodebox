@@ -25,13 +25,20 @@ module.exports = class LocalFileListWorker {
     }
 
     index () {
-        this.buildRecursiveFileList()
+        this._indexing = true
 
-        this.persistFilelist()
+        if (!this._indexing) {
+            console.log('LocalFileListWorker:index')
+            this.buildRecursiveFileList()
+
+            this.persistFilelist()
+        }
     }
 
     startWatcher () {
+        console.log('LocalFileListWorker:startWatcher')
         this._watcher = fs.watch(this.storagePath, {}, (eventType, filename) => {
+            console.log("filesystem event:", eventType, "on", filename)
             this.index()
         })
     }
@@ -61,10 +68,9 @@ module.exports = class LocalFileListWorker {
     }
 
     persistFilelist () {
-        console.log(this.dbPath)
-        console.log(this.filelist)
-
         configFile.writeConfigFile(this.dbPath, this.filelist)
+
+        this._indexing = false
     }
 
 }

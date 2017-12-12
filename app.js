@@ -81,7 +81,7 @@ let go = function run() {
      * + fetch filelist from server (keep only in memory, since it is fetched on every startup)
      * + subscribe to longpoll endpoint and fetch changes, as soon as there are some to server filelist
      */
-    let serverFileListWorker = new ServerFileListWorker(dbx, _settings.path, false)
+    let serverFileListWorker = new ServerFileListWorker(dbx, _settings.path, true)
 
 
     /**
