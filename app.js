@@ -18,7 +18,8 @@ const fs = require('./util/fs')
 const path = require('./util/path')
 const configFile = require('./util/configFile')
 
-const ServerFileListWorker = require('./worker/ServerFileListWorker.js')
+const ServerFileListWorker = require('./worker/ServerFileListWorker')
+const LocalFileListWorker = require('./worker/LocalFileListWorker')
 
 /**
  * Setup paths
@@ -80,13 +81,14 @@ let go = function run() {
      * + fetch filelist from server (keep only in memory, since it is fetched on every startup)
      * + subscribe to longpoll endpoint and fetch changes, as soon as there are some to server filelist
      */
-    let serverFileListWorker = new ServerFileListWorker(dbx, _settings.path, true)
+    let serverFileListWorker = new ServerFileListWorker(dbx, _settings.path, false)
 
 
     /**
      * start localFileListWorker
      * + create/update local index by analysing filesystem (including file hashes) and store to file
      */
+    let localFileListWorker = new LocalFileListWorker(dbx, _storagePath, _dbPath, true)
 
     /**
      * start mergeWorker

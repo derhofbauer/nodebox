@@ -1,9 +1,9 @@
 'use strict'
 
-const _ = require('lodash')
 const errorHandler = require('../util/errorHandler')
 
 module.exports = class ServerFileListWorker {
+
   constructor (dbx, path, load_filelist_on_creation) {
     this.dbx = dbx
     this.path = path
@@ -11,21 +11,21 @@ module.exports = class ServerFileListWorker {
     this.filelist = []
 
     if (load_filelist_on_creation === true) {
-      this.fetchFileList()
+      this.fetchFileListAndKeepUpdated()
     }
 
     this.last_cursor = ''
     this._longpolling = false
   }
 
-  fetchFileList () {
+  fetchFileListAndKeepUpdated () {
     this.dbx.filesListFolder({
       path: this.path,
       recursive: true,
       include_media_info: false,
       include_mounted_folders: true
     }).then((response) => {
-      // console.log('ServerFileListWorker:fetchFileList')
+      // console.log('ServerFileListWorker:fetchFileListAndKeepUpdated')
       this.handleListFolderReponse(response)
 
       if (response.has_more) {
@@ -57,7 +57,7 @@ module.exports = class ServerFileListWorker {
     console.log('ServerFileListWorker:handleListFolderResponse')
     this.handleCursor(response)
 
-    _.forEach(response.entries, (entry) => {
+    response.entries.forEach((entry) => {
       this.addEntryTolist(entry)
     })
 
@@ -118,4 +118,5 @@ module.exports = class ServerFileListWorker {
       errorHandler.handle(err)
     })
   }
+
 }

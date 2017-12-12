@@ -10,4 +10,8 @@ path.expandTilde = (path) => {
     return path
 }
 
+path.removeStaticFragment = (p, fragment) => {
+    return p.replace(fragment, '')
+}
+
 module.exports = path

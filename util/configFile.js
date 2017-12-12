@@ -7,7 +7,7 @@ module.exports = {
     writeConfigFile: (file, configObject) => {
         let content = JSON.stringify(configObject) || ''
 
-        fs.writeFile(file, content, {flag: 'w+'}, function(err) {
+        fs.writeFile(file, content, {flag: 'w+'}, (err) => {
             errorHandler.handle(err)
         })
     },
