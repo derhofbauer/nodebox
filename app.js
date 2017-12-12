@@ -27,10 +27,10 @@ _settingsFolder = path.expandTilde(_settingsFolder)
 console.log(_settingsFolder)
 _settingsPath = path.expandTilde(_settingsPath)
 console.log(_settingsPath)
-_storagePath = path.expandTilde(_storagePath)
-console.log(_storagePath)
 _dbPath = path.expandTilde(_dbPath)
 console.log(_dbPath)
+_storagePath = path.expandTilde(_storagePath)
+console.log(_storagePath)
 
 /**
  * Setup settings folder

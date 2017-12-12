@@ -25,7 +25,7 @@ module.exports = class ServerFileListWorker {
       include_media_info: false,
       include_mounted_folders: true
     }).then((response) => {
-            // console.log('ServerFileListWorker:fetchFileList')
+      // console.log('ServerFileListWorker:fetchFileList')
       this.handleListFolderReponse(response)
 
       if (response.has_more) {
@@ -40,12 +40,14 @@ module.exports = class ServerFileListWorker {
     this.dbx.filesListFolderContinue({
       cursor: this.last_cursor
     }).then((response) => {
-            // console.log('ServerFileListWorker:fetchFileListContinue')
-      this.handleListFolderReponse(response)
-
+      // console.log('ServerFileListWorker:fetchFileListContinue')
       if (response.has_more) {
         this.fetchFileListContinue()
+      } else {
+          this._longpolling = false
       }
+
+      this.handleListFolderReponse(response)
     }).catch((err) => {
       errorHandler.handle(err)
     })
@@ -85,6 +87,8 @@ module.exports = class ServerFileListWorker {
      * @todo: this.fetchFileListContinue()!
      * @todo: this._longpolling has to be stoppped on different places, so this.subscribeLongPoll() only runs after
      * @todo: this.fetchFileListContinue() has run and a new cursor is present!
+     *
+     * @done: this should work now. Needs some testing!
      */
   subscibreLongPoll () {
     console.log('ServerFileListWorker:subscribeLongPoll')
@@ -94,12 +98,15 @@ module.exports = class ServerFileListWorker {
     }).then((response) => {
       console.log('ServerFileListWorker:subscribeLongPoll:then')
       console.log(response)
-      this._longpolling = false
 
-      if (response.backoff) {
-        setTimeout(this.subscibreLongPoll(), response.backoff * 1000)
-      } else {
-        this.subscibreLongPoll()
+      if (!response.changes) {
+        this._longpolling = false
+
+        if (response.backoff) {
+          setTimeout(this.subscibreLongPoll(), response.backoff * 1000)
+        } else {
+          this.subscibreLongPoll()
+        }
       }
 
       if (response.changes) {
