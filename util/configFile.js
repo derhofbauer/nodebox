@@ -8,7 +8,9 @@ module.exports = {
         let content = JSON.stringify(configObject) || ''
 
         fs.writeFile(file, content, {flag: 'w+'}, (err) => {
-            errorHandler.handle(err)
+            if (err) {
+                errorHandler.handle(err)
+            }
         })
     },
 
