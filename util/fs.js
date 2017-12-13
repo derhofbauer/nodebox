@@ -8,22 +8,23 @@ fs.mkdirIfNotExists = (dir) => {
     fs.mkdirSync(dir)
   }
 }
+fs.walkSync = (p) => {
+  if (fs.statSync(p).isDirectory()) {
+    return fs.readdirSync(p).map((subPath) => {
+      return fs.joinOrWalkSync(p, subPath)
+    })
+  } else {
+    return p
+  }
 }
 
-fs.walkSync = (dir) => {
-    if (fs.statSync(dir).isDirectory()) {
-        return fs.readdirSync(dir).map((file) => {
-            let fullPath = path.join(dir, file)
+fs.joinOrWalkSync = (p, subPath) => {
+    let fullPath = path.join(p, subPath)
 
-            if (fs.statSync(fullPath).isDirectory()) {
-                return path.join(dir, file)
-            } else {
-                return fs.walkSync(path.join(dir, file))
-            }
-        })
-    } else {
-        return dir
+    if (fs.statSync(fullPath).isDirectory()) {
+        return fullPath
     }
+    return fs.walkSync(fullPath)
 }
 
 module.exports = fs
