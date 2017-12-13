@@ -1,6 +1,6 @@
 'use strict'
 
-const errorHandler = require('../util/errorHandler')
+// const errorHandler = require('../util/errorHandler')
 const configFile = require('../util/configFile')
 const fs = require('../util/fs')
 const path = require('../util/path')
@@ -9,14 +9,14 @@ const _ = require('lodash')
 
 module.exports = class LocalFileListWorker {
 
-    constructor (dbx, storagePath, dbPath, start_indexing_on_creation) {
+    constructor (dbx, storagePath, dbPath, startIndexingOnCreation) {
         this.dbx = dbx
         this.storagePath = storagePath
         this.dbPath = dbPath
 
         this.filelist = []
 
-        if (start_indexing_on_creation === true) {
+        if (startIndexingOnCreation === true) {
             this.index()
         }
         this.startWatcher()
@@ -25,10 +25,11 @@ module.exports = class LocalFileListWorker {
     }
 
     index () {
-        this._indexing = true
+        console.log('LocalFileListWorker:index')
 
         if (!this._indexing) {
-            console.log('LocalFileListWorker:index')
+            this._indexing = true
+
             this.buildRecursiveFileList()
 
             this.persistFilelist()
@@ -48,6 +49,7 @@ module.exports = class LocalFileListWorker {
     }
 
     buildRecursiveFileList () {
+        console.log('LocalFileListWorker:buildRecursiveFileList')
         this.filelist = _.map(fs.walkSync(this.storagePath), (value, index) => {
             return this.getRelativePathFromAbsolute(value)
         })

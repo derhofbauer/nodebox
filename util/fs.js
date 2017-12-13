@@ -4,9 +4,10 @@ const fs = require('fs')
 const path = require('./path')
 
 fs.mkdirIfNotExists = (dir) => {
-    if (!fs.existsSync(dir)){
-        fs.mkdirSync(dir)
-    }
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir)
+  }
+}
 }
 
 fs.walkSync = (dir) => {
