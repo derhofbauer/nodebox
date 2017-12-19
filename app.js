@@ -18,6 +18,12 @@ const fs = require('./util/fs')
 const path = require('./util/path')
 const configFile = require('./util/configFile')
 
+const Settings = require('./class/settings')
+let settings = new Settings({
+    path: "/.dotfiles/testfolder"
+})
+console.log(settings._settings)
+
 const ServerFileListWorker = require('./worker/ServerFileListWorker')
 const LocalFileListWorker = require('./worker/LocalFileListWorker')
 const MergeWorker = require('./worker/MergeWorker')
