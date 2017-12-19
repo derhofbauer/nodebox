@@ -4,9 +4,10 @@ const errorHandler = require('../util/errorHandler')
 
 module.exports = class ServerFileListWorker {
 
-  constructor (dbx, path, load_filelist_on_creation) {
+  constructor (dbx, settings, load_filelist_on_creation) {
     this.dbx = dbx
-    this.path = path
+    this.settings = settings
+    this.path = this.settings.get('path')
 
     this.filelist = []
 
@@ -14,7 +15,7 @@ module.exports = class ServerFileListWorker {
       this.fetchFileListAndKeepUpdated()
     }
 
-    this.last_cursor = ''
+    this.settings.set('last_cursor', '')
     this._indexing = false
     this._longpolling = false
   }
@@ -46,7 +47,7 @@ module.exports = class ServerFileListWorker {
       cursor: this.last_cursor
     }).then((response) => {
       // console.log('ServerFileListWorker:fetchFileListContinue')
-      console.log(this.last_cursor)
+      console.log(this.settings.get('last_cursor'))
       if (response.has_more) {
         this.fetchFileListContinue()
       } else {
@@ -76,7 +77,7 @@ module.exports = class ServerFileListWorker {
   handleCursor (response) {
         // console.log('ServerFileListWorker:handleCursor')
     if (response.cursor) {
-      this.last_cursor = response.cursor
+      this.settings.set('last_cursor', response.cursor)
     }
   }
 
@@ -101,7 +102,7 @@ module.exports = class ServerFileListWorker {
     console.log('ServerFileListWorker:subscribeLongPoll')
     this._longpolling = true
     this.dbx.filesListFolderLongpoll({
-      cursor: this.last_cursor
+      cursor: this.settings.get('last_cursor')
     }).then((response) => {
       console.log('ServerFileListWorker:subscribeLongPoll:then')
       console.log(response)

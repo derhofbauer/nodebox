@@ -19,55 +19,32 @@ const path = require('./util/path')
 const configFile = require('./util/configFile')
 
 const Settings = require('./class/settings')
-let settings = new Settings({
-    path: "/.dotfiles/testfolder"
-})
-console.log(settings._settings)
 
 const ServerFileListWorker = require('./worker/ServerFileListWorker')
 const LocalFileListWorker = require('./worker/LocalFileListWorker')
 const MergeWorker = require('./worker/MergeWorker')
 
 /**
- * Setup paths
+ * Settings
  */
-_settingsFolder = path.expandTilde(_settingsFolder)
-console.log(_settingsFolder)
-_settingsPath = path.expandTilde(_settingsPath)
-console.log(_settingsPath)
-_dbPath = path.expandTilde(_dbPath)
-console.log(_dbPath)
-_storagePath = path.expandTilde(_storagePath)
-console.log(_storagePath)
-
-/**
- * Setup settings folder
- */
-fs.mkdirIfNotExists(_settingsFolder)
-
-/**
- * Read config file
- */
-if (fs.existsSync(_settingsPath)) {
-    _settings = configFile.readConfigFile(_settingsPath)
-} else {
-    configFile.writeConfigFile(_settingsPath, _settings)
-}
-console.log(_settings)
+let settings = new Settings({
+    path: '/.dotfiles/testfolder'
+})
+console.info('Settings:', settings.get())
 
 /**
  * Read db file
  */
-if (fs.existsSync(_dbPath)) {
-    _db = configFile.readConfigFile(_dbPath)
+if (fs.existsSync(settings.get('dbPath'))) {
+    _db = configFile.readConfigFile(settings.get('dbPath'))
 } else {
-    configFile.writeConfigFile(_dbPath, _db)
+    configFile.writeConfigFile(settings.get('dbPath'), _db)
 }
 
 /**
  * Setup storage folder
  */
-fs.mkdirIfNotExists(_storagePath)
+fs.mkdirIfNotExists(settings.get('storagePath'))
 
 
 
@@ -77,36 +54,39 @@ fs.mkdirIfNotExists(_storagePath)
  * @todo: prompt is required since we got everything we need.
  */
 let go = function run() {
-    /**
-     * Set access token from config file or prompt
-     */
-    dbx.setAccessToken(_settings.accessToken)
+
+    if (settings.get('accessToken')) {
+        /**
+         * Set access token from config file or prompt
+         */
+        dbx.setAccessToken(settings.get('accessToken'))
+
+        /**
+         * start serverFileListWorker
+         * + fetch filelist from server (keep only in memory, since it is fetched on every startup)
+         * + subscribe to longpoll endpoint and fetch changes, as soon as there are some to server filelist
+         */
+        let serverFileListWorker = new ServerFileListWorker(dbx, settings, true)
 
 
-    /**
-     * start serverFileListWorker
-     * + fetch filelist from server (keep only in memory, since it is fetched on every startup)
-     * + subscribe to longpoll endpoint and fetch changes, as soon as there are some to server filelist
-     */
-    let serverFileListWorker = new ServerFileListWorker(dbx, _settings.path, true)
+        /**
+         * start localFileListWorker
+         * + create/update local index by analysing filesystem (including file hashes) and store to file
+         */
+        let localFileListWorker = new LocalFileListWorker(dbx, settings.get('storagePath'), settings.get('dbPath'), true)
 
+        /**
+         * start mergeWorker
+         * + based on filelist from server and local index create a download queue for downloadWorker
+         */
+        let mergeWorker = new MergeWorker(serverFileListWorker, localFileListWorker)
 
-    /**
-     * start localFileListWorker
-     * + create/update local index by analysing filesystem (including file hashes) and store to file
-     */
-    let localFileListWorker = new LocalFileListWorker(dbx, _storagePath, _dbPath, true)
+        /**
+         * start downloadWorker
+         * + download files from list created by mergeWorker
+         */
+    }
 
-    /**
-     * start mergeWorker
-     * + based on filelist from server and local index create a download queue for downloadWorker
-     */
-    let mergeWorker = new MergeWorker(serverFileListWorker, localFileListWorker)
-
-    /**
-     * start downloadWorker
-     * + download files from list created by mergeWorker
-     */
 }
 
 
@@ -114,7 +94,7 @@ let go = function run() {
 /**
  * Get Access Token
  */
-if (!_settings.accessToken) {
+if (!settings.get('accessToken')) {
     prompt.start()
 
     prompt.get({
@@ -123,13 +103,13 @@ if (!_settings.accessToken) {
                 description: 'Please enter a valid API V2 access token'
             },
             path: {
-                description: 'Please enter a valid path within your dropbox (default: "' + _devPath + '")'
+                description: 'Please enter a valid path within your dropbox (default: "' + settings.get('path') + '")'
             }
         }
     }, (error, result) => {
-        _settings.accessToken = result.accessToken
-        _settings.path = result.path || _settings.path || _devPath
-        configFile.writeConfigFile(_settingsPath, _settings)
+        settings.set('accessToken', result.accessToken)
+        settings.set('path', result.path || settings.get('path'))
+        settings.persist()
 
         go()
     })

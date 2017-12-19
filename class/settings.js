@@ -1,46 +1,60 @@
 'use strict'
 
 const _ = require('lodash')
+const nconf = require('nconf')
 const path = require('../util/path')
+const fs = require('../util/fs')
 
 module.exports = class NodeboxSettings {
 
     constructor (settingsObject) {
-        if (settingsObject.devPath) {
-            this.path = settingsObject.devPath || '/.dotfiles/testfolder'
-        } else {
-            this.path = settingsObject.path
-        }
+        let settingsPath = path.expandTilde('~/.config/nodebox/nodebox.json')
 
-        // this._settingsFolder = settingsObject.settingsFoler || '~/.config/nodebox/'
-        // this.settingsPath = this._settingsFolder + (settingsObject.settingsPath || 'nodebox.json')
-        // this.dbPath = this._settingsFolder + (settingsObject.dbPath || 'nodebox_db.json')
-        // this.storagePath = settingsObject.storagePath || '~/nodebox'
+        fs.mkdirIfNotExists(settingsPath)
 
-        this._defaults = {
+        this.settings = nconf.file({file: settingsPath})
+
+        this.settings.defaults({
             settingsFolder: path.expandTilde('~/.config/nodebox/'),
-            settingsPath: path.expandTilde('~/.config/nodebox/nodebox.json'),
+            settingsPath: settingsPath,
             dbPath: path.expandTilde('~/.config/nodebox/nodebox_db.json'),
             storagePath: path.expandTilde('~/nodebox'),
-            path: path.expandTilde('/'),
+            path: '/',
             accessToken: null,
             lastCursor: null
-        }
+        })
 
-        this._settings = _.merge(this._defaults, settingsObject)
-        this._db = []
-    }
+        this.settings.save()
 
-    getAll () {
-        return this._settings
+        _.forEach(settingsObject, (value, key) => {
+            this.settings.set(key, value)
+        })
+
+        setTimeout(() => {
+            this.interval = this.startPersistTimer()
+        }, 300 * 1000) // 5 minutes
     }
 
     get (name) {
-        return this._settings[name]
+        return this.settings.get(name)
     }
 
     set (name, value) {
-        this._settings[name] = value
+        this.settings.set(name, value)
+    }
+
+    persist (callback) {
+        let defaultCallback = (err) => {
+            fs.readFile(this.settings.get('settingsPath'), (err, data) => {
+                console.dir(JSON.parse(data.toString()))
+            })
+        }
+
+        this.settings.save(callback || defaultCallback)
+    }
+
+    startPersistTimer (seconds = 300) { // 5 minutes
+        return setInterval(this.persist(), seconds * 1000)
     }
 
 }
