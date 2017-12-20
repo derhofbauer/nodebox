@@ -3,7 +3,6 @@
 const errorHandler = require('../util/errorHandler')
 
 module.exports = class ServerFileListWorker {
-
   constructor (dbx, settings, load_filelist_on_creation) {
     this.dbx = dbx
     this.settings = settings
@@ -51,8 +50,8 @@ module.exports = class ServerFileListWorker {
       if (response.has_more) {
         this.fetchFileListContinue()
       } else {
-          this._indexing = false
-          this._longpolling = false
+        this._indexing = false
+        this._longpolling = false
       }
 
       this.handleListFolderReponse(response)
@@ -130,5 +129,4 @@ module.exports = class ServerFileListWorker {
   isIndexing () {
     return this._indexing
   }
-
 }

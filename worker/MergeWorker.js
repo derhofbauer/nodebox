@@ -1,19 +1,18 @@
 'use strict'
 
 module.exports = class MergeWorker {
+  constructor (ServerFileListWorker, LocalFileListWorker) {
+    this.serverFileListWorker = ServerFileListWorker
+    this.localFileListWorker = LocalFileListWorker
 
-    constructor (ServerFileListWorker, LocalFileListWorker) {
-        this.serverFileListWorker = ServerFileListWorker
-        this.localFileListWorker = LocalFileListWorker
+    this.downloadList = []
+  }
 
-        this.downloadList = []
-    }
+  watchWorkersForChanges () {
 
-    watchWorkersForChanges () {
-        
-    }
+  }
 
-    mergeFileLists () {
+  mergeFileLists () {
 
-    }
+  }
 }

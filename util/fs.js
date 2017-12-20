@@ -47,12 +47,12 @@ fs.walkSync = (p) => {
  * @return {string}|{Array.<string>}
  */
 fs.joinOrWalkSync = (p, subPath) => {
-    let fullPath = path.join(p, subPath)
+  let fullPath = path.join(p, subPath)
 
-    if (fs.statSync(fullPath).isDirectory()) {
-        return fullPath
-    }
-    return fs.walkSync(fullPath)
+  if (fs.statSync(fullPath).isDirectory()) {
+    return fullPath
+  }
+  return fs.walkSync(fullPath)
 }
 
 module.exports = fs
