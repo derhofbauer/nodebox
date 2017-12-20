@@ -2,20 +2,12 @@
 
 const Dropbox = require('dropbox')
 const prompt = require('prompt')
-// const _ = require('lodash')
 
 let dbx = new Dropbox()
-let _devPath = '/.dotfiles/testfolder'
-let _settingsFolder = '~/.config/nodebox/'
-let _settingsPath = _settingsFolder + 'nodebox.json'
-let _dbPath = _settingsFolder + 'nodebox_db.json'
-let _storagePath = '~/nodebox'
-let _settings = {}
 let _db = []
 
 // const utilDownload = require('./lib/downloadFileList')(dbx, filelist, _db)
 const fs = require('./util/fs')
-const path = require('./util/path')
 const configFile = require('./util/configFile')
 
 const Settings = require('./class/settings')
@@ -88,7 +80,6 @@ let go = function run() {
     }
 
 }
-
 
 
 /**

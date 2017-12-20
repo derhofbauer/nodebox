@@ -46,7 +46,7 @@ module.exports = class NodeboxSettings {
     persist (callback) {
         let defaultCallback = (err) => {
             fs.readFile(this.settings.get('settingsPath'), (err, data) => {
-                console.dir(JSON.parse(data.toString()))
+                console.dir(JSON.parse(data.toString()), {colors: true})
             })
         }
 
