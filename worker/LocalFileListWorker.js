@@ -7,7 +7,12 @@ const path = require('../util/path')
 
 const _ = require('lodash')
 
+/**
+ * @todo: file watcher needs to listen for certain events and handle them. When a file is changed or a new file is
+ * @todo: created by the downloadWorker module, it needs to be indexed.
+ */
 module.exports = class LocalFileListWorker {
+
   constructor (dbx, storagePath, dbPath, startIndexingOnCreation) {
     this.dbx = dbx
     this.storagePath = storagePath
@@ -23,6 +28,9 @@ module.exports = class LocalFileListWorker {
     this._indexing = false
   }
 
+  /**
+   * @todo: build a list similar to the list from the Dropbox API containing timestamps and file hashes.
+   */
   index () {
     console.log('LocalFileListWorker:index')
 
