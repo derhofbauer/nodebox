@@ -14,5 +14,8 @@
     "os": "^0.1.1",
     "path": "^0.12.7",
     "prompt": "^1.0.0"
+  },
+  "devDependencies": {
+    "standard": "^10.0.3"
   }
 }
