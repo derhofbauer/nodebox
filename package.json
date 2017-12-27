@@ -17,5 +17,12 @@
   },
   "devDependencies": {
     "standard": "^10.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/derhofbauer/nodebox"
+  },
+  "bugs": {
+    "url": "https://github.com/derhofbauer/nodebox/issues"
   }
 }
