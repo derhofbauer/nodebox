@@ -6,6 +6,7 @@ const path = require('../util/path')
 const fs = require('../util/fs')
 
 module.exports = class NodeboxSettings {
+
   constructor (settingsObject) {
     let settingsPath = path.expandTilde('~/.config/nodebox/nodebox.json')
 
