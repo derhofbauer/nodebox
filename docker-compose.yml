@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  node:
+    image: node:8
+    volumes:
+      - ./:/opt/nodebox
+      - data-volume:/root/nodebox
+    command: sh -c 'npm install --global yarn && yarn run dev'
+    working_dir: /opt/nodebox
+    environment:
+      NODE_ENV: 'development'
+      LOG_LEVEL: 'debug'
+
+volumes:
+  data-volume:
