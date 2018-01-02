@@ -8,11 +8,11 @@ const fs = require('../util/fs')
 module.exports = class NodeboxSettings {
 
   constructor (settingsObject) {
-    let settingsPath = path.expandTilde('~/.config/nodebox/nodebox.json')
+    let settingsPath = path.expandTilde('~/.config/nodebox/')
 
     fs.mkdirIfNotExists(settingsPath)
 
-    this.settings = nconf.file({file: settingsPath})
+    this.settings = nconf.file({ file: settingsPath + 'nodebox.json' })
 
     this.settings.defaults({
       settingsFolder: path.expandTilde('~/.config/nodebox/'),
