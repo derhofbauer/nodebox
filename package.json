@@ -17,6 +17,7 @@
     "prompt": "^1.0.0"
   },
   "devDependencies": {
+    "jsdoc": "^3.5.5",
     "nodemon": "^1.14.7",
     "standard": "^10.0.3"
   },
