@@ -1,7 +1,5 @@
 'use strict'
 
-// const errorHandler = require('../util/errorHandler')
-const configFile = require('../util/configFile')
 const fs = require('../util/fs')
 const path = require('../util/path')
 
@@ -13,10 +11,9 @@ const _ = require('lodash')
  */
 module.exports = class LocalFileListWorker {
 
-  constructor (dbx, storagePath, dbPath, startIndexingOnCreation) {
+  constructor (dbx, db, startIndexingOnCreation) {
     this.dbx = dbx
-    this.storagePath = storagePath
-    this.dbPath = dbPath
+    this.db = db
 
     this.filelist = []
 
@@ -45,7 +42,7 @@ module.exports = class LocalFileListWorker {
 
   startWatcher () {
     console.log('LocalFileListWorker:startWatcher')
-    this._watcher = fs.watch(this.storagePath, {}, (eventType, filename) => {
+    this._watcher = fs.watch(this.db.getSettings('storagePath'), {}, (eventType, filename) => {
       console.log('filesystem event:', eventType, 'on', filename)
       this.index()
     })
@@ -57,7 +54,7 @@ module.exports = class LocalFileListWorker {
 
   buildRecursiveFileList () {
     console.log('LocalFileListWorker:buildRecursiveFileList')
-    this.filelist = _.map(fs.walkSync(this.storagePath), (value, index) => {
+    this.filelist = _.map(fs.walkSync(this.db.getSettings('storagePath')), (value) => {
       return this.getRelativePathFromAbsolute(value)
     })
 
@@ -65,11 +62,11 @@ module.exports = class LocalFileListWorker {
   }
 
   getRelativePathFromAbsolute (absolutePath) {
-    return path.removeStaticFragment(absolutePath, this.storagePath)
+    return path.removeStaticFragment(absolutePath, this.db.getSettings('storagePath'))
   }
 
   getAbsolutePathFromRelative (relativePath) {
-    return path.join(this.storagePath, relativePath)
+    return path.join(this.db.getSettings('storagePath'), relativePath)
   }
 
   isDirectory (relativePath) {
@@ -77,7 +74,7 @@ module.exports = class LocalFileListWorker {
   }
 
   persistFilelist () {
-    configFile.writeConfigFile(this.dbPath, this.filelist)
+    this.db.setIndexLocal(this.filelist)
 
     this._indexing = false
   }
