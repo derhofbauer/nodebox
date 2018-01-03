@@ -6,7 +6,7 @@ module.exports = class ServerFileListWorker {
   constructor (dbx, settings, load_filelist_on_creation) {
     this.dbx = dbx
     this.settings = settings
-    this.path = this.settings.get('path')
+    this.path = this.settings.getSettings('path')
 
     this.filelist = []
 
@@ -14,7 +14,6 @@ module.exports = class ServerFileListWorker {
       this.fetchFileListAndKeepUpdated()
     }
 
-    this.settings.set('last_cursor', '')
     this._indexing = false
     this._longpolling = false
   }
@@ -46,7 +45,7 @@ module.exports = class ServerFileListWorker {
       cursor: this.last_cursor
     }).then((response) => {
       // console.log('ServerFileListWorker:fetchFileListContinue')
-      console.log(this.settings.get('last_cursor'))
+      console.log(this.settings.getSettings('lastCursor'))
       if (response.has_more) {
         this.fetchFileListContinue()
       } else {
@@ -69,14 +68,14 @@ module.exports = class ServerFileListWorker {
     })
 
     if (!response.has_more && !this._longpolling) {
-      this.subscibreLongPoll()
+      this.subscribeLongPoll()
     }
   }
 
   handleCursor (response) {
         // console.log('ServerFileListWorker:handleCursor')
     if (response.cursor) {
-      this.settings.set('last_cursor', response.cursor)
+      this.settings.setSetting('lastCursor', response.cursor)
     }
   }
 
@@ -97,11 +96,11 @@ module.exports = class ServerFileListWorker {
      *
      * @done: this should work now. Needs some testing!
      */
-  subscibreLongPoll () {
+  subscribeLongPoll () {
     console.log('ServerFileListWorker:subscribeLongPoll')
     this._longpolling = true
     this.dbx.filesListFolderLongpoll({
-      cursor: this.settings.get('last_cursor')
+      cursor: this.settings.getSettings('lastCursor')
     }).then((response) => {
       console.log('ServerFileListWorker:subscribeLongPoll:then')
       console.log(response)
@@ -110,9 +109,9 @@ module.exports = class ServerFileListWorker {
         this._longpolling = false
 
         if (response.backoff) {
-          setTimeout(this.subscibreLongPoll(), response.backoff * 1000)
+          setTimeout(this.subscribeLongPoll(), response.backoff * 1000)
         } else {
-          this.subscibreLongPoll()
+          this.subscribeLongPoll()
         }
       }
 

@@ -10,7 +10,7 @@ let _db = []
 const fs = require('./util/fs')
 const configFile = require('./util/configFile')
 
-const Settings = require('./class/settings')
+const Db = require('./class/db')
 
 const ServerFileListWorker = require('./worker/ServerFileListWorker')
 const LocalFileListWorker = require('./worker/LocalFileListWorker')
@@ -19,24 +19,25 @@ const MergeWorker = require('./worker/MergeWorker')
 /**
  * Settings
  */
-let settings = new Settings({
+let db = new Db({
   path: '/.dotfiles/testfolder'
 })
-console.info('Settings:', settings.get())
+console.info('DB:', db.getAll())
 
 /**
  * Read db file
  */
-if (fs.existsSync(settings.get('dbPath'))) {
-  _db = configFile.readConfigFile(settings.get('dbPath'))
-} else {
-  configFile.writeConfigFile(settings.get('dbPath'), _db)
-}
+// if (fs.existsSync(settings.get('dbPath'))) {
+//   _db = configFile.readConfigFile(settings.get('dbPath'))
+// } else {
+//   configFile.writeConfigFile(settings.get('dbPath'), _db)
+// }
 
 /**
  * Setup storage folder
  */
-fs.mkdirIfNotExists(settings.get('storagePath'))
+console.info("StoragePath: ", db.getSettings('storagePath'))
+fs.mkdirIfNotExists(db.getSettings('storagePath'))
 
 /**
  * @todo: refactor this to a beautiful class with a .go()/.start() method. This has the benefit of being able to create
@@ -44,24 +45,24 @@ fs.mkdirIfNotExists(settings.get('storagePath'))
  * @todo: prompt is required since we got everything we need.
  */
 let go = function run () {
-  if (settings.get('accessToken')) {
+  if (db.getSettings('accessToken')) {
         /**
          * Set access token from config file or prompt
          */
-    dbx.setAccessToken(settings.get('accessToken'))
+    dbx.setAccessToken(db.getSettings('accessToken'))
 
         /**
          * start serverFileListWorker
          * + fetch filelist from server (keep only in memory, since it is fetched on every startup)
          * + subscribe to longpoll endpoint and fetch changes, as soon as there are some to server filelist
          */
-    let serverFileListWorker = new ServerFileListWorker(dbx, settings, true)
+    let serverFileListWorker = new ServerFileListWorker(dbx, db, true)
 
         /**
          * start localFileListWorker
          * + create/update local index by analysing filesystem (including file hashes) and store to file
          */
-    let localFileListWorker = new LocalFileListWorker(dbx, settings.get('storagePath'), settings.get('dbPath'), true)
+    let localFileListWorker = new LocalFileListWorker(dbx, db, true)
 
         /**
          * start mergeWorker
@@ -79,7 +80,7 @@ let go = function run () {
 /**
  * Get Access Token
  */
-if (!settings.get('accessToken')) {
+if (!db.getSettings('accessToken')) {
   prompt.start()
 
   prompt.get({
@@ -88,13 +89,14 @@ if (!settings.get('accessToken')) {
         description: 'Please enter a valid API V2 access token'
       },
       path: {
-        description: 'Please enter a valid path within your dropbox (default: "' + settings.get('path') + '")'
+        description: 'Please enter a valid path within your dropbox (default: "' + db.getSettings('path') + '")'
       }
     }
   }, (error, result) => {
-    settings.set('accessToken', result.accessToken)
-    settings.set('path', result.path || settings.get('path'))
-    settings.persist()
+    db.setSetting('accessToken', result.accessToken)
+    if (result.path) {
+      db.setSetting('path', result.path)
+    }
 
     go()
   })
