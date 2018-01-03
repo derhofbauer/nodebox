@@ -4,11 +4,8 @@ const Dropbox = require('dropbox')
 const prompt = require('prompt')
 
 let dbx = new Dropbox()
-let _db = []
 
-// const utilDownload = require('./lib/downloadFileList')(dbx, filelist, _db)
 const fs = require('./util/fs')
-const configFile = require('./util/configFile')
 
 const Db = require('./class/db')
 

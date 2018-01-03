@@ -1,9 +1,7 @@
 'use strict'
 
 const _ = require('lodash')
-const nconf = require('nconf')
 const path = require('../util/path')
-const fs = require('../util/fs')
 
 const low = require('lowdb')
 const FileSync = require('lowdb/adapters/FileSync')
@@ -22,7 +20,7 @@ module.exports = class NodeboxDatabase {
 
         let _merged = _.merge(_defaults, customSettings)
 
-        this.db = low(new FileSync(_defaults.settingsPath))
+        this.db = low(new FileSync(_merged.settingsPath))
         this.db.read()
 
         this.db.defaults({ indexLocal: [], indexServer: [], settings: _defaults

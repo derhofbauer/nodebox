@@ -1,7 +1,5 @@
 'use strict'
 
-// const errorHandler = require('../util/errorHandler')
-const configFile = require('../util/configFile')
 const fs = require('../util/fs')
 const path = require('../util/path')
 
@@ -56,7 +54,7 @@ module.exports = class LocalFileListWorker {
 
   buildRecursiveFileList () {
     console.log('LocalFileListWorker:buildRecursiveFileList')
-    this.filelist = _.map(fs.walkSync(this.db.getSettings('storagePath')), (value, index) => {
+    this.filelist = _.map(fs.walkSync(this.db.getSettings('storagePath')), (value) => {
       return this.getRelativePathFromAbsolute(value)
     })
 
