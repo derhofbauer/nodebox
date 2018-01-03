@@ -14,4 +14,11 @@ path.removeStaticFragment = (p, fragment) => {
   return p.replace(fragment, '')
 }
 
+path.addLeadingSlash = (p) => {
+    if (p[0] !== '/') {
+        return '/' + p
+    }
+    return p
+}
+
 module.exports = path

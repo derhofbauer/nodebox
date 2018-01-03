@@ -3,6 +3,8 @@
 const fs = require('../util/fs')
 const path = require('../util/path')
 
+const FileHasher = require('../util/hasher-sample')
+
 const _ = require('lodash')
 
 /**
@@ -53,15 +55,43 @@ module.exports = class LocalFileListWorker {
 
   buildRecursiveFileList () {
     console.log('LocalFileListWorker:buildRecursiveFileList')
-    this.filelist = _.map(fs.walkSync(this.db.getSettings('storagePath')), (value) => {
-      return this.getRelativePathFromAbsolute(value)
+    this.filelist = _.map(fs.walkSync(this.db.getSettings('storagePath')), (absolutePath) => {
+      let p = this.getRelativePathFromAbsolute(absolutePath)
+      let s = fs.statSync(absolutePath, (err, stats) => {
+        if (err) {
+          console.log(err)
+        }
+        return stats
+      })
+
+      if (s.isFile()) {
+          let h = new FileHasher(absolutePath).getHex()
+
+          return {
+              '.tag': 'file',
+              name: path.basename(p),
+              path_lower: p.toLowerCase(),
+              path_display: p,
+              client_modified: s.mtime,
+              size: s.size,
+              content_hash: h
+          }
+      }
+      return {
+          '.tag': 'folder',
+          name: path.basename(p),
+          path_lower: p.toLowerCase(),
+          path_display: p
+      }
     })
 
     return this.filelist
   }
 
   getRelativePathFromAbsolute (absolutePath) {
-    return path.removeStaticFragment(absolutePath, this.db.getSettings('storagePath'))
+    return path.addLeadingSlash(
+        path.removeStaticFragment(absolutePath, this.db.getSettings('storagePath'))
+    )
   }
 
   getAbsolutePathFromRelative (relativePath) {
