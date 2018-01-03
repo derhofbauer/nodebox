@@ -33,7 +33,7 @@ console.info('DB:', db.getAll())
 /**
  * Setup storage folder
  */
-console.info("StoragePath: ", db.getSettings('storagePath'))
+console.info('StoragePath: ', db.getSettings('storagePath'))
 fs.mkdirIfNotExists(db.getSettings('storagePath'))
 
 /**

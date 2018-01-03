@@ -3,14 +3,14 @@
 const errorHandler = require('../util/errorHandler')
 
 module.exports = class ServerFileListWorker {
-  constructor (dbx, settings, load_filelist_on_creation) {
+  constructor (dbx, settings, loadFilelistOnCreation) {
     this.dbx = dbx
     this.settings = settings
     this.path = this.settings.getSettings('path')
 
     this.filelist = []
 
-    if (load_filelist_on_creation === true) {
+    if (loadFilelistOnCreation === true) {
       this.fetchFileListAndKeepUpdated()
     }
 

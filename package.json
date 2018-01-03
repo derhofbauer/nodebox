@@ -33,6 +33,7 @@
     "dev": "yarn run init && yarn run nodemon",
     "init": "yarn",
     "nodemon": "nodemon app.js",
-    "eslint": "eslint **.js ./**/*.js"
+    "eslint": "eslint **.js ./**/*.js",
+    "standard": "standard **.js ./**/*.js"
   }
 }

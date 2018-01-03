@@ -10,7 +10,6 @@ const _ = require('lodash')
  * @todo: created by the downloadWorker module, it needs to be indexed.
  */
 module.exports = class LocalFileListWorker {
-
   constructor (dbx, db, startIndexingOnCreation) {
     this.dbx = dbx
     this.db = db
