@@ -90,6 +90,10 @@ if (!db.getSettings('accessToken')) {
       }
     }
   }, (error, result) => {
+    if (error) {
+      console.log(error)
+    }
+
     db.setSetting('accessToken', result.accessToken)
     if (result.path) {
       db.setSetting('path', result.path)

@@ -63,12 +63,12 @@ fs.joinOrWalkSync = (p, subPath) => {
  * @return {object} stats object
  */
 fs.statSyncError = (p) => {
-    return fs.statSync(p, (err, stats) => {
-        if (err) {
-            console.log(err)
-        }
-        return stats
-    })
+  return fs.statSync(p, (err, stats) => {
+    if (err) {
+      console.log(err)
+    }
+    return stats
+  })
 }
 
 module.exports = fs

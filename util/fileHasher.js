@@ -16,100 +16,89 @@ const BLOCK_SIZE = 4 * 1024 * 1024
  * @return {string} Hash of p
  */
 module.exports = class FileHasher {
+  constructor (absolutePath) {
+    this._overallHasher = crypto.createHash('sha256')
+    this._blockHasher = crypto.createHash('sha256')
+    this._pointer = 0
 
-    constructor (absolutePath) {
-        this._overallHasher = crypto.createHash('sha256')
-        this._blockHasher = crypto.createHash('sha256')
-        this._pointer = 0
+    this.path = absolutePath
+    this.data = null
+    this.stream = fs.createReadStream(this.path)
+    this.hexDigest = ''
 
-        this.path = absolutePath
-        this.data = null
-        this.stream = fs.createReadStream(this.path)
-        this.hexDigest = ''
-
-        console.log('Path:', this.path)
+    console.log('Path:', this.path)
 
         // return streamToPromise(this.stream)
 
-        return new Promise((resolve, reject) => {
-            this.stream.on('data', (buffer) => {
+    return new Promise((resolve, reject) => {
+      this.stream.on('data', (buffer) => {
                 // console.log(`Receiving ${buffer.length} bytes of data.`)
-                this.update(buffer)
-            })
-            this.stream.on('end', (err) => {
-                if (err) {
-                    console.log(err)
-                }
-                this.hexDigest = this.digest('hex')
+        this.update(buffer)
+      })
+      this.stream.on('end', (err) => {
+        if (err) {
+          console.log(err)
+        }
+        this.hexDigest = this.digest('hex')
                 // console.log('hexDigest:', this.hexDigest)
-                resolve(this.hexDigest)
-            })
-            this.stream.on('error', (err) => {
-                console.log('Error reading from file: ', err)
-                reject(err)
-            })
-        })
-    }
+        resolve(this.hexDigest)
+      })
+      this.stream.on('error', (err) => {
+        console.log('Error reading from file: ', err)
+        reject(err)
+      })
+    })
+  }
 
-    update (data, inputEncoding) {
-        this.checkOverallHasher()
+  update (data, inputEncoding) {
+    this.checkOverallHasher()
 
-        if (!Buffer.isBuffer(data)) {
-            if (inputEncoding !== undefined &&
+    if (!Buffer.isBuffer(data)) {
+      if (inputEncoding !== undefined &&
                 inputEncoding !== 'utf8' &&
                 inputEncoding !== 'ascii' &&
                 inputEncoding !== 'latin1'
             ) {
-                throw new Error('Invalid \'input encoding\': ' + JSON.stringify(inputEncoding))
-            }
-            this.data = Buffer.from(data, inputEncoding)
-        } else {
-            this.data = data
-        }
-
-        let offset = 0
-        while (offset < this.data.length) {
-            if (this._pointer === BLOCK_SIZE) {
-                this._overallHasher.update(this._blockHasher.digest())
-                this._blockHasher = crypto.createHash('sha256')
-                this._pointer = 0
-            }
-
-            let spaceInBlock = BLOCK_SIZE - this._pointer
-            let inputPartEnd = Math.min(this.data.length, offset + spaceInBlock)
-            let inputPartLength = inputPartEnd - offset
-            this._blockHasher.update(data.slice(offset, inputPartEnd))
-
-            this._pointer += inputPartEnd
-            offset = inputPartEnd
-        }
+        throw new Error('Invalid \'input encoding\': ' + JSON.stringify(inputEncoding))
+      }
+      this.data = Buffer.from(data, inputEncoding)
+    } else {
+      this.data = data
     }
 
-    digest (encoding) {
-        this.checkOverallHasher()
+    let offset = 0
+    while (offset < this.data.length) {
+      if (this._pointer === BLOCK_SIZE) {
+        this._overallHasher.update(this._blockHasher.digest())
+        this._blockHasher = crypto.createHash('sha256')
+        this._pointer = 0
+      }
 
-        if (this._pointer > 0) {
-            this._overallHasher.update(this._blockHasher.digest())
-            this._blockHasher = null
-        }
-        let r = this._overallHasher.digest(encoding)
-        this._overallHasher = null
-        return r
-    }
+      let spaceInBlock = BLOCK_SIZE - this._pointer
+      let inputPartEnd = Math.min(this.data.length, offset + spaceInBlock)
+            // let inputPartLength = inputPartEnd - offset
+      this._blockHasher.update(data.slice(offset, inputPartEnd))
 
-    checkOverallHasher () {
-        if (this._overallHasher === null) {
-            throw new AssertionError(
-                'can\'t use this object anymore; .digest() was called already.'
-            )
-        }
+      this._pointer += inputPartEnd
+      offset = inputPartEnd
     }
+  }
 
-    streamToPromise (stream) {
-        return new Promise((resolve, reject) => {
-            stream.on('end', resolve)
-            stream.on('error', reject)
-            stream.resume()
-        })
+  digest (encoding) {
+    this.checkOverallHasher()
+
+    if (this._pointer > 0) {
+      this._overallHasher.update(this._blockHasher.digest())
+      this._blockHasher = null
     }
+    let r = this._overallHasher.digest(encoding)
+    this._overallHasher = null
+    return r
+  }
+
+  checkOverallHasher () {
+    if (this._overallHasher === null) {
+      throw new Error('can\'t use this object anymore; .digest() was called already.')
+    }
+  }
 }
