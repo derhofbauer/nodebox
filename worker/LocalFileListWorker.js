@@ -59,19 +59,10 @@ module.exports = class LocalFileListWorker {
         let relativePath = this.getRelativePathFromAbsolute(absolutePath)
         let stats = fs.statSyncError(absolutePath)
 
-                // is file
+        // is file
         if (stats.isFile()) {
           new FileHasher(absolutePath).then((hash) => {
-            let file = {
-              '.tag': 'file',
-              name: path.basename(relativePath),
-              path_lower: relativePath.toLowerCase(),
-              path_display: relativePath,
-              client_modified: stats.mtime,
-              size: stats.size,
-              content_hash: hash
-            }
-            console.debug('File:', file)
+            let file = this.prepareFile(relativePath, stats, hash)
             this.filelist.push(file)
 
             if (index === files.length - 1) {
@@ -82,13 +73,8 @@ module.exports = class LocalFileListWorker {
           })
         }
         if (stats.isDirectory()) {
-                    // is directory
-          let directory = {
-            '.tag': 'folder',
-            name: path.basename(relativePath),
-            path_lower: relativePath.toLowerCase(),
-            path_display: relativePath
-          }
+          // is directory
+          let directory = this.prepareDirectory(relativePath)
           console.debug('Directory:', directory)
           this.filelist.push(directory)
 
@@ -130,5 +116,26 @@ module.exports = class LocalFileListWorker {
 
   isIndexing () {
     return this._indexing
+  }
+
+  prepareFile (relativePath, stats, hash) {
+      return {
+          '.tag': 'file',
+          name: path.basename(relativePath),
+          path_lower: relativePath.toLowerCase(),
+          path_display: relativePath,
+          client_modified: stats.mtime,
+          size: stats.size,
+          content_hash: hash
+      }
+  }
+
+  prepareDirectory (relativePath) {
+      return {
+          '.tag': 'folder',
+          name: path.basename(relativePath),
+          path_lower: relativePath.toLowerCase(),
+          path_display: relativePath
+      }
   }
 }
