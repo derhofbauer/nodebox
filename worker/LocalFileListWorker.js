@@ -48,39 +48,20 @@ module.exports = class LocalFileListWorker {
     return this._watcher
   }
 
-    /**
-     * @todo: Refactor to cleaner code!
-     */
   buildRecursiveFileList () {
     console.log('LocalFileListWorker:buildRecursiveFileList')
     return new Promise((resolve, reject) => {
       let files = fs.walkSync(this.db.getSettings('storagePath'))
-      files.forEach((absolutePath, index, files) => {
-        let relativePath = this.getRelativePathFromAbsolute(absolutePath)
+      files.forEach((absolutePath, index, collection) => {
         let stats = fs.statSyncError(absolutePath)
 
         // is file
         if (stats.isFile()) {
-          new FileHasher(absolutePath).then((hash) => {
-            let file = this.prepareFile(relativePath, stats, hash)
-            this.filelist.push(file)
-
-            if (index === files.length - 1) {
-              resolve(this.filelist)
-            }
-          }).catch((err) => {
-            console.log(err)
-          })
+          this.handleFile(absolutePath, stats, index, collection, resolve)
         }
+        // is directory
         if (stats.isDirectory()) {
-          // is directory
-          let directory = this.prepareDirectory(relativePath)
-          console.debug('Directory:', directory)
-          this.filelist.push(directory)
-
-          if (index === files.length - 1) {
-            resolve(this.filelist)
-          }
+          this.handleDirectry(absolutePath, index, collection, resolve)
         }
         if (!stats.isFile() && !stats.isDirectory()) {
           reject(new Error(`Error: Path ${absolutePath} is not a file or directory.`))
@@ -136,6 +117,31 @@ module.exports = class LocalFileListWorker {
           name: path.basename(relativePath),
           path_lower: relativePath.toLowerCase(),
           path_display: relativePath
+      }
+  }
+
+  handleFile (absolutePath, stats, index, files, resolve) {
+    new FileHasher(absolutePath).then((hash) => {
+      let relativePath = this.getRelativePathFromAbsolute(absolutePath)
+      let file = this.prepareFile(relativePath, stats, hash)
+      this.filelist.push(file)
+
+      if (index === files.length - 1) {
+        resolve(this.filelist)
+      }
+    }).catch((err) => {
+      console.log(err)
+    })
+  }
+
+  handleDirectry (absolutePath, index, files, resolve) {
+      let relativePath = this.getRelativePathFromAbsolute(absolutePath)
+      let directory = this.prepareDirectory(relativePath)
+      console.debug('Directory:', directory)
+      this.filelist.push(directory)
+
+      if (index === files.length - 1) {
+          resolve(this.filelist)
       }
   }
 }
