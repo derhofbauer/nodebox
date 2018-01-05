@@ -17,32 +17,38 @@ const BLOCK_SIZE = 4 * 1024 * 1024
  */
 module.exports = class FileHasher {
 
-    constructor (p) {
+    constructor (absolutePath) {
         this._overallHasher = crypto.createHash('sha256')
         this._blockHasher = crypto.createHash('sha256')
         this._pointer = 0
 
-        this.path = p
+        this.path = absolutePath
         this.data = null
         this.stream = fs.createReadStream(this.path)
         this.hexDigest = ''
 
         console.log('Path:', this.path)
 
-        // return this.hash()
+        // return streamToPromise(this.stream)
 
-        this.stream.on('data', (buffer) => {
-            this.update(buffer)
-         })
-        this.stream.on('end', (err) => {
-            this.hexDigest = this.digest('hex')
-            console.log('hexDigest:', this.hexDigest)
+        return new Promise((resolve, reject) => {
+            this.stream.on('data', (buffer) => {
+                // console.log(`Receiving ${buffer.length} bytes of data.`)
+                this.update(buffer)
             })
-        this.stream.on('error', (err) => {
-            console.log('Error reading from file: ', err)
+            this.stream.on('end', (err) => {
+                if (err) {
+                    console.log(err)
+                }
+                this.hexDigest = this.digest('hex')
+                // console.log('hexDigest:', this.hexDigest)
+                resolve(this.hexDigest)
+            })
+            this.stream.on('error', (err) => {
+                console.log('Error reading from file: ', err)
+                reject(err)
+            })
         })
-
-        return this.hexDigest
     }
 
     update (data, inputEncoding) {
@@ -57,6 +63,8 @@ module.exports = class FileHasher {
                 throw new Error('Invalid \'input encoding\': ' + JSON.stringify(inputEncoding))
             }
             this.data = Buffer.from(data, inputEncoding)
+        } else {
+            this.data = data
         }
 
         let offset = 0
@@ -97,21 +105,11 @@ module.exports = class FileHasher {
         }
     }
 
-    hash () {
-        this.stream.on('data', (buffer) => {
-            this.update(buffer)
+    streamToPromise (stream) {
+        return new Promise((resolve, reject) => {
+            stream.on('end', resolve)
+            stream.on('error', reject)
+            stream.resume()
         })
-        this.stream.on('end', (err) => {
-            this.hexDigest = this.digest('hex')
-            return this.hexDigest
-            console.log(this.hexDigest)
-        })
-        this.stream.on('error', (err) => {
-            console.log('Error reading from file: ', err)
-        })
-    }
-
-    getHex () {
-        return this.hexDigest
     }
 }

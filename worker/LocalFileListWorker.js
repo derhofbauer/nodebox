@@ -3,7 +3,7 @@
 const fs = require('../util/fs')
 const path = require('../util/path')
 
-const FileHasher = require('../util/hasher-sample')
+const FileHasher = require('../util/fileHasher')
 
 const _ = require('lodash')
 
@@ -12,103 +12,125 @@ const _ = require('lodash')
  * @todo: created by the downloadWorker module, it needs to be indexed.
  */
 module.exports = class LocalFileListWorker {
-  constructor (dbx, db, startIndexingOnCreation) {
-    this.dbx = dbx
-    this.db = db
+    constructor (dbx, db, startIndexingOnCreation) {
+        this.dbx = dbx
+        this.db = db
 
-    this.filelist = []
+        this.filelist = []
 
-    if (startIndexingOnCreation === true) {
-      this.index()
-    }
-    this.startWatcher()
-
-    this._indexing = false
-  }
-
-  /**
-   * @todo: build a list similar to the list from the Dropbox API containing timestamps and file hashes.
-   */
-  index () {
-    console.log('LocalFileListWorker:index')
-
-    if (!this._indexing) {
-      this._indexing = true
-
-      this.buildRecursiveFileList()
-
-      this.persistFilelist()
-    }
-  }
-
-  startWatcher () {
-    console.log('LocalFileListWorker:startWatcher')
-    this._watcher = fs.watch(this.db.getSettings('storagePath'), {}, (eventType, filename) => {
-      console.log('filesystem event:', eventType, 'on', filename)
-      this.index()
-    })
-  }
-
-  getWatcher () {
-    return this._watcher
-  }
-
-  buildRecursiveFileList () {
-    console.log('LocalFileListWorker:buildRecursiveFileList')
-    this.filelist = _.map(fs.walkSync(this.db.getSettings('storagePath')), (absolutePath) => {
-      let p = this.getRelativePathFromAbsolute(absolutePath)
-      let s = fs.statSync(absolutePath, (err, stats) => {
-        if (err) {
-          console.log(err)
+        if (startIndexingOnCreation === true) {
+            this.index()
         }
-        return stats
-      })
+        this.startWatcher()
 
-      if (s.isFile()) {
-          let h = new FileHasher(absolutePath).getHex()
+        this._indexing = false
+    }
 
-          return {
-              '.tag': 'file',
-              name: path.basename(p),
-              path_lower: p.toLowerCase(),
-              path_display: p,
-              client_modified: s.mtime,
-              size: s.size,
-              content_hash: h
-          }
-      }
-      return {
-          '.tag': 'folder',
-          name: path.basename(p),
-          path_lower: p.toLowerCase(),
-          path_display: p
-      }
-    })
+    index () {
+        console.log('LocalFileListWorker:index')
 
-    return this.filelist
-  }
+        if (!this._indexing) {
+            this._indexing = true
 
-  getRelativePathFromAbsolute (absolutePath) {
-    return path.addLeadingSlash(
-        path.removeStaticFragment(absolutePath, this.db.getSettings('storagePath'))
-    )
-  }
+            this.buildRecursiveFileList().then(() => {
+                this.persistFilelist()
+            })
+        }
+    }
 
-  getAbsolutePathFromRelative (relativePath) {
-    return path.join(this.db.getSettings('storagePath'), relativePath)
-  }
+    startWatcher () {
+        console.debug('LocalFileListWorker:startWatcher')
+        this._watcher = fs.watch(this.db.getSettings('storagePath'), {}, (eventType, filename) => {
+            console.log('filesystem event:', eventType, 'on', filename)
+              this.index()
+        })
+    }
 
-  isDirectory (relativePath) {
-    return fs.statSync(relativePath).isDirectory()
-  }
+    getWatcher () {
+        return this._watcher
+    }
 
-  persistFilelist () {
-    this.db.setIndexLocal(this.filelist)
+    /**
+     * @todo: Refactor to cleaner code!
+     */
+    buildRecursiveFileList () {
+        console.log('LocalFileListWorker:buildRecursiveFileList')
+        return new Promise ((resolve, reject) => {
+            let files = fs.walkSync(this.db.getSettings('storagePath'))
+            files.forEach((absolutePath, index, files) => {
+                let relativePath = this.getRelativePathFromAbsolute(absolutePath)
+                let stats = fs.statSyncError(absolutePath)
 
-    this._indexing = false
-  }
+                // is file
+                if (stats.isFile()) {
+                    let hasher = new FileHasher(absolutePath).then((hash) => {
+                        let file = {
+                            '.tag': 'file',
+                            name: path.basename(relativePath),
+                            path_lower: relativePath.toLowerCase(),
+                            path_display: relativePath,
+                            client_modified: stats.mtime,
+                            size: stats.size,
+                            content_hash: hash
+                        }
+                        console.debug('File:', file)
+                        this.filelist.push(file)
 
-  isIndexing () {
-    return this._indexing
-  }
+                        if (index === files.length - 1) {
+                          resolve(this.filelist)
+                        }
+                    }).catch((err) => {
+                        console.log(err)
+                    })
+                }
+                if (stats.isDirectory()) {
+                    // is directory
+                    let directory = {
+                        '.tag': 'folder',
+                        name: path.basename(relativePath),
+                        path_lower: relativePath.toLowerCase(),
+                        path_display: relativePath
+                    }
+                    console.debug('Directory:', directory)
+                    this.filelist.push(directory)
+
+                    if (index === files.length - 1) {
+                        resolve(this.filelist)
+                    }
+                }
+                if (!stats.isFile() && !stats.isDirectory()) {
+                  reject(`Error: Path ${absolutePath} is not a file or directory.`)
+                }
+            })
+        })
+    }
+
+    getRelativePathFromAbsolute (absolutePath) {
+        return path.addLeadingSlash(
+            path.removeStaticFragment(absolutePath, this.db.getSettings('storagePath'))
+        )
+    }
+
+    getRelativePathFromAbsoluteDropbox (absolutePath) {
+        return this.db.getSettings('path') + this.getRelativePathFromAbsolute(absolutePath)
+    }
+
+    getAbsolutePathFromRelative (relativePath) {
+        return path.join(this.db.getSettings('storagePath'), relativePath)
+    }
+
+    isDirectory (relativePath) {
+        return fs.statSync(relativePath).isDirectory()
+    }
+
+    persistFilelist () {
+        console.log('LocalFileListWorker:persistFilelist')
+        this.db.setIndexLocal(this.filelist)
+
+        this._indexing = false
+    }
+
+    isIndexing () {
+        return this._indexing
+    }
 }

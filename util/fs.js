@@ -55,4 +55,20 @@ fs.joinOrWalkSync = (p, subPath) => {
   return fs.walkSync(fullPath)
 }
 
+/**
+ * Run fs.statSync and handle the error.
+ *
+ * @since 1.0.0
+ * @param {string} p Path to "stat"
+ * @return {object} stats object
+ */
+fs.statSyncError = (p) => {
+    return fs.statSync(p, (err, stats) => {
+        if (err) {
+            console.log(err)
+        }
+        return stats
+    })
+}
+
 module.exports = fs
