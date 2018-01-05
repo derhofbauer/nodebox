@@ -3,7 +3,7 @@
 const crypto = require('crypto')
 const fs = require('fs')
 
-const BLOCK_SIZE = 4 * 1024 * 1024
+const BLOCK_SIZE = 4 * 1024 * 1024 // 4MB
 
 /**
  * Hash given file in blocks of 4MB (https://www.dropbox.com/developers/reference/content-hash).
@@ -12,8 +12,8 @@ const BLOCK_SIZE = 4 * 1024 * 1024
  *   https://github.com/dropbox/dropbox-api-content-hasher/blob/master/js-node/dropbox-content-hasher.js
  *
  * @since 1.0.0
- * @param {string} p Filepath to be hashed
- * @return {string} Hash of p
+ * @param {string} absolutePath Filepath to be hashed
+ * @return {string} Hash of file at `absolutePath`
  */
 module.exports = class FileHasher {
   constructor (absolutePath) {
@@ -53,18 +53,7 @@ module.exports = class FileHasher {
   update (data, inputEncoding) {
     this.checkOverallHasher()
 
-    if (!Buffer.isBuffer(data)) {
-      if (inputEncoding !== undefined &&
-                inputEncoding !== 'utf8' &&
-                inputEncoding !== 'ascii' &&
-                inputEncoding !== 'latin1'
-            ) {
-        throw new Error('Invalid \'input encoding\': ' + JSON.stringify(inputEncoding))
-      }
-      this.data = Buffer.from(data, inputEncoding)
-    } else {
-      this.data = data
-    }
+    this.prepareBuffer(data, inputEncoding)
 
     let offset = 0
     while (offset < this.data.length) {
@@ -76,7 +65,7 @@ module.exports = class FileHasher {
 
       let spaceInBlock = BLOCK_SIZE - this._pointer
       let inputPartEnd = Math.min(this.data.length, offset + spaceInBlock)
-            // let inputPartLength = inputPartEnd - offset
+      // let inputPartLength = inputPartEnd - offset
       this._blockHasher.update(data.slice(offset, inputPartEnd))
 
       this._pointer += inputPartEnd
@@ -100,5 +89,24 @@ module.exports = class FileHasher {
     if (this._overallHasher === null) {
       throw new Error('can\'t use this object anymore; .digest() was called already.')
     }
+  }
+
+  checkInputEncoding (encoding) {
+      if (encoding !== undefined &&
+          encoding !== 'utf8' &&
+          encoding !== 'ascii' &&
+          encoding !== 'latin1'
+      ) {
+          throw new Error('Invalid \'input encoding\': ' + JSON.stringify(encoding))
+      }
+  }
+
+  prepareBuffer (data, encoding) {
+      this.data = data
+      if (!Buffer.isBuffer(data)) {
+          this.checkInputEncoding(encoding)
+
+          this.data = Buffer.from(data, encoding)
+      }
   }
 }
