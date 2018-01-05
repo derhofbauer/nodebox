@@ -19,6 +19,9 @@ module.exports = class NodeboxDatabase {
 
     let _merged = _.merge(_defaults, customSettings)
 
+      /**
+       * @todo: use custom serializer/deserializer to uglify JSON and save space
+       */
     this.db = low(new FileSync(_merged.settingsPath))
     this.db.read()
 
