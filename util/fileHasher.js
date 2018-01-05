@@ -3,6 +3,10 @@
 const crypto = require('crypto')
 const fs = require('fs')
 
+/**
+ * Block size of Dropbox hash chunks
+ * @const
+ */
 const BLOCK_SIZE = 4 * 1024 * 1024 // 4MB
 
 /**
@@ -11,24 +15,61 @@ const BLOCK_SIZE = 4 * 1024 * 1024 // 4MB
  * This Class is based upon the Dropbox sample class:
  *   https://github.com/dropbox/dropbox-api-content-hasher/blob/master/js-node/dropbox-content-hasher.js
  *
+ * @type {FileHasher}
  * @since 1.0.0
- * @param {string} absolutePath Filepath to be hashed
- * @return {string} Hash of file at `absolutePath`
  */
 module.exports = class FileHasher {
+
+  /**
+   * Hash file found at `absolutePath`
+   * @param {string} absolutePath Filepath to be hashed
+   * @return {Promise} Promise resolving to `absolutePath` hash
+   */
   constructor (absolutePath) {
+
+    /**
+     * Hasher for sum of chunk hashes
+     * @member {Hash}
+     */
     this._overallHasher = crypto.createHash('sha256')
+
+    /**
+     * Hasher for single chunk hashes
+     * @member {Hash}
+     */
     this._blockHasher = crypto.createHash('sha256')
+
+    /**
+     * Pointer in current chunk
+     * @member {number}
+     */
     this._pointer = 0
 
+    /**
+     * Path to file that is to be hashed
+     * @member {string}
+     */
     this.path = absolutePath
+
+    /**
+     * Buffer for hash generation
+     * @member {(null|Buffer)}
+     */
     this.data = null
+
+    /**
+     * Stream of file content
+     * @member {fs.ReadStream}
+     */
     this.stream = fs.createReadStream(this.path)
+
+    /**
+     * Hexadecimal Hash of file
+     * @member{string}
+     */
     this.hexDigest = ''
 
-    console.log('Path:', this.path)
-
-        // return streamToPromise(this.stream)
+    console.debug('Path:', this.path)
 
     return new Promise((resolve, reject) => {
       this.stream.on('data', (buffer) => {
@@ -50,6 +91,12 @@ module.exports = class FileHasher {
     })
   }
 
+  /**
+   * Updates this._blockHaser or this._overallHasher according to this._pointer
+   *   value.
+   * @param {Buffer} data Stream of current chunk
+   * @param {string} inputEncoding Hash encoding
+   */
   update (data, inputEncoding) {
     this.checkOverallHasher()
 
@@ -73,6 +120,11 @@ module.exports = class FileHasher {
     }
   }
 
+  /**
+   * Generate overall hash and reset this._blockHasher and this._overallHasher
+   * @param {string} encoding Hash encoding
+   * @returns {string} Hash of file content
+   */
   digest (encoding) {
     this.checkOverallHasher()
 
@@ -85,12 +137,20 @@ module.exports = class FileHasher {
     return r
   }
 
+  /**
+   * Helper method to check this._overallHasher
+   */
   checkOverallHasher () {
     if (this._overallHasher === null) {
       throw new Error('can\'t use this object anymore; .digest() was called already.')
     }
   }
 
+  /**
+   * Helper method to validate encoding
+   * @param {string} encoding
+   * @throws {Error} Will throw an error if wrong encoding was given.
+   */
   checkInputEncoding (encoding) {
       if (encoding !== undefined &&
           encoding !== 'utf8' &&
@@ -101,6 +161,11 @@ module.exports = class FileHasher {
       }
   }
 
+  /**
+   * Helper method to prepare stream buffer (this.data)
+   * @param {Buffer} data Buffer to prepare
+   * @param {string} encoding Stream encoding to use for reading the file
+   */
   prepareBuffer (data, encoding) {
       this.data = data
       if (!Buffer.isBuffer(data)) {

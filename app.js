@@ -53,13 +53,13 @@ let go = function run () {
          * + fetch filelist from server (keep only in memory, since it is fetched on every startup)
          * + subscribe to longpoll endpoint and fetch changes, as soon as there are some to server filelist
          */
-    let serverFileListWorker = new ServerFileListWorker(dbx, db, true)
+    let serverFileListWorker = new ServerFileListWorker(dbx, db)
 
         /**
          * start localFileListWorker
          * + create/update local index by analysing filesystem (including file hashes) and store to file
          */
-    let localFileListWorker = new LocalFileListWorker(dbx, db, true)
+    let localFileListWorker = new LocalFileListWorker(dbx, db)
 
         /**
          * start mergeWorker

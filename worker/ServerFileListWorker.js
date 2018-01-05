@@ -2,8 +2,23 @@
 
 const errorHandler = require('../util/errorHandler')
 
+/**
+ * This module provides a worker class to fetch a filelist from Dropbox and keep
+ *   it updated by listening to the longpoll endpoint.
+ * @type {module.ServerFileListWorker}
+ * @since 1.0.0
+ */
 module.exports = class ServerFileListWorker {
-  constructor (dbx, settings, loadFilelistOnCreation) {
+
+  /**
+   * Fetch file list from Dropbox API and keep it updated
+   * @since 1.0.0
+   * @param {Dropbox} dbx Dropbox SDK instacne
+   * @param {Object} settings Settings object from config file
+   * @param {boolean} loadFilelistOnCreation Whether to start creating an index
+   *   on instantiation.
+   */
+  constructor (dbx, settings, loadFilelistOnCreation = true) {
     this.dbx = dbx
     this.settings = settings
     this.path = this.settings.getSettings('path')
@@ -14,10 +29,22 @@ module.exports = class ServerFileListWorker {
       this.fetchFileListAndKeepUpdated()
     }
 
+    /**
+     * Indexing switch; true when indexing, false when idle
+     * @member {boolean}
+     */
     this._indexing = false
+    /**
+     * Longpolling switch; true when indexing, false when idle
+     * @member {boolean}
+     */
     this._longpolling = false
   }
 
+  /**
+   * Fetch file list from Dropbox API and keep it updated
+   * @since 1.0.0
+   */
   fetchFileListAndKeepUpdated () {
     this._indexing = true
     this.dbx.filesListFolder({
@@ -39,6 +66,11 @@ module.exports = class ServerFileListWorker {
     })
   }
 
+  /**
+   * Fetches the next bit of the file list from Dropbox API and calls itself if
+   *   there still is something left
+   * @since 1.0.0
+   */
   fetchFileListContinue () {
     this._indexing = true
     this.dbx.filesListFolderContinue({
@@ -59,6 +91,11 @@ module.exports = class ServerFileListWorker {
     })
   }
 
+  /**
+   * Handles Dropbox API response and starts longpolling if this was the last bit
+   * @since 1.0.0
+   * @param {Object.<string,*>} response Filelist or error from Dropbox API
+   */
   handleListFolderReponse (response) {
     console.log('ServerFileListWorker:handleListFolderResponse')
     this.handleCursor(response)
@@ -72,30 +109,35 @@ module.exports = class ServerFileListWorker {
     }
   }
 
+  /**
+   * Handles the cursor returned by the Dropbox API by storing it into the
+   *   config file.
+   * @param {Object.<string,*>} response Fielist or error from Dropbox API
+   */
   handleCursor (response) {
-        // console.log('ServerFileListWorker:handleCursor')
+    // console.log('ServerFileListWorker:handleCursor')
     if (response.cursor) {
       this.settings.setSetting('lastCursor', response.cursor)
     }
   }
 
+  /**
+   * Ppushes an entry to the file list attribute
+   * @param {Object.<string,*>} entry File or directory object from Dropbox API
+   */
   addEntryTolist (entry) {
-        // console.log('ServerFileListWorker:addEntryToList')
+    // console.log('ServerFileListWorker:addEntryToList')
     if (entry.id) {
       this.filelist[entry.id] = entry
-      return
+    } else {
+      this.filelist.push(entry)
     }
-    this.filelist.push(entry)
   }
 
-    /**
-     * @todo: This opens a few connections, since it calls itself, before a new cursor is recieved by
-     * @todo: this.fetchFileListContinue()!
-     * @todo: this._longpolling has to be stoppped on different places, so this.subscribeLongPoll() only runs after
-     * @todo: this.fetchFileListContinue() has run and a new cursor is present!
-     *
-     * @done: this should work now. Needs some testing!
-     */
+  /**
+   * Listenes to the longpoll endpoint of Dropbox API and handles changes.
+   * @since 1.0.0
+   */
   subscribeLongPoll () {
     console.log('ServerFileListWorker:subscribeLongPoll')
     this._longpolling = true
@@ -125,6 +167,11 @@ module.exports = class ServerFileListWorker {
     })
   }
 
+  /**
+   * Helper method to check indexing switch
+   * @since 1.0.0
+   * @returns {boolean} True when indexing, false when idle
+   */
   isIndexing () {
     return this._indexing
   }

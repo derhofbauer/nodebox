@@ -2,6 +2,8 @@
 
 /**
  * This module extends the default `fs` module with a few functions.
+ *
+ * @augments fs
  */
 
 const fs = require('fs')
@@ -25,7 +27,7 @@ fs.mkdirIfNotExists = (dir) => {
  *
  * @since 1.0.0
  * @param {string} p Path to create a file list of
- * @return {Array.<string>} Recursive file list
+ * @returns {Array.<string>} Recursive file list
  */
 fs.walkSync = (p) => {
   if (fs.statSync(p).isDirectory()) {
@@ -44,7 +46,7 @@ fs.walkSync = (p) => {
  * @since 1.0.0
  * @param {string} p Current working path
  * @param {string} subPath One item below `p`
- * @return {string}|{Array.<string>}
+ * @returns {(string|Array.<string>)}
  */
 fs.joinOrWalkSync = (p, subPath) => {
   let fullPath = path.join(p, subPath)
@@ -60,7 +62,7 @@ fs.joinOrWalkSync = (p, subPath) => {
  *
  * @since 1.0.0
  * @param {string} p Path to "stat"
- * @return {object} stats object
+ * @returns {object} stats object
  */
 fs.statSyncError = (p) => {
   return fs.statSync(p, (err, stats) => {
