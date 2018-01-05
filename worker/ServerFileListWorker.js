@@ -15,13 +15,20 @@ module.exports = class ServerFileListWorker {
    * @since 1.0.0
    * @param {Dropbox} dbx Dropbox SDK instacne
    * @param {Object} settings Settings object from config file
+   * @param {NodeboxEventEmitter} eventEmitter EventEmitter Instance
    * @param {boolean} loadFilelistOnCreation Whether to start creating an index
    *   on instantiation.
    */
-  constructor (dbx, settings, loadFilelistOnCreation = true) {
+  constructor (dbx, settings, eventEmitter, loadFilelistOnCreation = true) {
     this.dbx = dbx
     this.settings = settings
     this.path = this.settings.getSettings('path')
+
+    /**
+     * EventEmitter
+     * @member {NodeboxEventEmitter}
+     */
+    this._em = eventEmitter
 
     this.filelist = []
 
@@ -47,12 +54,10 @@ module.exports = class ServerFileListWorker {
    */
   fetchFileListAndKeepUpdated () {
     this._indexing = true
-    this.dbx.filesListFolder({
-      path: this.path,
-      recursive: true,
-      include_media_info: false,
-      include_mounted_folders: true
-    }).then((response) => {
+    console.debug(this.getDefaultConfig())
+    this.dbx.filesListFolder(
+      this.getDefaultConfig()
+    ).then((response) => {
       // console.log('ServerFileListWorker:fetchFileListAndKeepUpdated')
       this.handleListFolderReponse(response)
 
@@ -60,6 +65,7 @@ module.exports = class ServerFileListWorker {
         this.fetchFileListContinue()
       } else {
         this._indexing = false
+        this._em.emit('serverWorker:ready')
       }
     }).catch((err) => {
       errorHandler.handle(err)
@@ -74,14 +80,15 @@ module.exports = class ServerFileListWorker {
   fetchFileListContinue () {
     this._indexing = true
     this.dbx.filesListFolderContinue({
-      cursor: this.last_cursor
+      cursor: this.getLastCursor()
     }).then((response) => {
       // console.log('ServerFileListWorker:fetchFileListContinue')
-      console.log(this.settings.getSettings('lastCursor'))
+      console.debug(this.settings.getSettings('lastCursor'))
       if (response.has_more) {
         this.fetchFileListContinue()
       } else {
         this._indexing = false
+        this._em.emit('serverWorker:ready')
         this._longpolling = false
       }
 
@@ -97,7 +104,7 @@ module.exports = class ServerFileListWorker {
    * @param {Object.<string,*>} response Filelist or error from Dropbox API
    */
   handleListFolderReponse (response) {
-    console.log('ServerFileListWorker:handleListFolderResponse')
+    console.debug('ServerFileListWorker:handleListFolderResponse')
     this.handleCursor(response)
 
     response.entries.forEach((entry) => {
@@ -139,13 +146,13 @@ module.exports = class ServerFileListWorker {
    * @since 1.0.0
    */
   subscribeLongPoll () {
-    console.log('ServerFileListWorker:subscribeLongPoll')
+    console.debug('ServerFileListWorker:subscribeLongPoll')
     this._longpolling = true
     this.dbx.filesListFolderLongpoll({
-      cursor: this.settings.getSettings('lastCursor')
+      cursor: this.getLastCursor()
     }).then((response) => {
-      console.log('ServerFileListWorker:subscribeLongPoll:then')
-      console.log(response)
+      console.debug('ServerFileListWorker:subscribeLongPoll:then')
+      console.debug(response)
 
       if (!response.changes) {
         this._longpolling = false
@@ -157,14 +164,52 @@ module.exports = class ServerFileListWorker {
         }
       }
 
-      if (response.changes) {
+      if (response.changes === true) {
         this.fetchFileListContinue()
       }
     }).catch((err) => {
-      console.log('ServerFileListWorker:subscribeLongPoll:catch')
+      console.debug('ServerFileListWorker:subscribeLongPoll:catch')
       this._longpolling = false
       errorHandler.handle(err)
     })
+  }
+
+  /**
+   * Returns the latest cursor from the database. If there is none, it fetches
+   *   the latest cursor from the Dropbox API and stores it to the database.
+   * @since 1.0.0
+   * @returns {string} Latest cursor
+   */
+  getLastCursor () {
+    let lastCursor = this.settings.getSettings('lastCursor')
+
+    if (lastCursor === '') {
+      this.dbx.filesListFolderGetLatestCursor(
+        this.getDefaultConfig()
+      ).then((response) => {
+        this.handleCursor(response)
+        return this.settings.getSettings('lastCursor')
+      }).catch((err) => {
+        errorHandler.handle(err)
+        throw new Error('No cursor found!')
+      })
+    } else {
+      return lastCursor
+    }
+  }
+
+  /**
+   * Returns the default config for Dropbox API list folder endpoints
+   * @since 1.0.0
+   * @returns {{path: mixed|MediaTrackSettings|*, recursive: boolean, include_media_info: boolean, include_mounted_folders: boolean}}
+   */
+  getDefaultConfig() {
+    return {
+      path: this.path,
+      recursive: true,
+      include_media_info: false,
+      include_mounted_folders: true
+    }
   }
 
   /**
@@ -174,5 +219,14 @@ module.exports = class ServerFileListWorker {
    */
   isIndexing () {
     return this._indexing
+  }
+
+  /**
+   * Returns the local file list
+   * @since 1.0.0
+   * @returns {Array.<Object>} Local file list
+   */
+  getFileList () {
+    return this.filelist
   }
 }

@@ -1,9 +1,11 @@
 'use strict'
 
+const chokidar = require('chokidar')
 const fs = require('../util/fs')
 const path = require('../util/path')
 
 const FileHasher = require('../util/fileHasher')
+const FileListWorker = require('../class/FileListWorker')
 
 /**
  * This module provides a worker class to index the local storage path and keep
@@ -16,19 +18,26 @@ const FileHasher = require('../util/fileHasher')
  * @type {module.LocalFileListWorker}
  * @since 1.0.0
  */
-module.exports = class LocalFileListWorker {
+module.exports = class LocalFileListWorker extends FileListWorker {
 
   /**
    * Create local file list and start listener.
    * @since 1.0.0
    * @param {Dropbox} dbx Dropbox SDK instance
    * @param {Lowdb} db LowDB instance
+   * @param {NodeboxEventEmitter} eventEmitter EventEmitter Instance
    * @param {boolean} startIndexingOnCreation Whether to start creating an index
    *   on instantiation.
    */
-  constructor (dbx, db, startIndexingOnCreation = true) {
+  constructor (dbx, db, eventEmitter, startIndexingOnCreation = true) {
     this.dbx = dbx
     this.db = db
+
+    /**
+     * EventEmitter
+     * @member {NodeboxEventEmitter}
+     */
+    this._em = eventEmitter
 
     this.filelist = []
 
@@ -42,6 +51,13 @@ module.exports = class LocalFileListWorker {
      * @member {boolean}
      */
     this._indexing = false
+
+    /**
+     * File system watcher
+     * @member {chokidar}
+     */
+    this._watcher = null
+    this._watcherReady = false
   }
 
   /**
@@ -49,12 +65,13 @@ module.exports = class LocalFileListWorker {
    * @since 1.0.0
    */
   index () {
-    console.log('LocalFileListWorker:index')
+    console.debug('LocalFileListWorker:index')
 
     if (!this._indexing) {
       this._indexing = true
 
       this.buildRecursiveFileList().then(() => {
+        this._em.emit('localWorker:ready')
         this.persistFilelist()
       })
     }
@@ -62,15 +79,29 @@ module.exports = class LocalFileListWorker {
 
   /**
    * Starts a filesystem event listener using `fs.watch`.
+   *
+   * @todo: handle filesystem events correctly and do stuff other than logging it!
+   *
    * @since 1.0.0
    * @returns {fs.FSWatcher} File system watcher
    */
   startWatcher () {
     console.debug('LocalFileListWorker:startWatcher')
-    this._watcher = fs.watch(this.db.getSettings('storagePath'), {}, (eventType, filename) => {
-      console.log('filesystem event:', eventType, 'on', filename)
-      this.index()
+    this._watcher = chokidar.watch(this.db.getSettings('storagePath'), {
+      persistent: true,
+      awaitWriteFinish: true
     })
+    this._watcher.on('ready', () => {
+      console.debug(`Initial scan complete, watcher is now ready!`)
+      this._watcherReady = true
+    })
+    this._watcher.on('all', (eventName, path) => {
+      console.debug(`Event ${eventName} was emitted on ${path}.`)
+    })
+    this._watcher.on('error', (err) => {
+      throw new Error(err)
+    })
+
     return this._watcher
   }
 
@@ -90,7 +121,7 @@ module.exports = class LocalFileListWorker {
    *   rejects when an entry is neither a file nor a directory.
    */
   buildRecursiveFileList () {
-    console.log('LocalFileListWorker:buildRecursiveFileList')
+    console.debug('LocalFileListWorker:buildRecursiveFileList')
     return new Promise((resolve, reject) => {
       let files = fs.walkSync(this.db.getSettings('storagePath'))
       files.forEach((absolutePath, index, collection) => {
@@ -149,7 +180,7 @@ module.exports = class LocalFileListWorker {
    * @since 1.0.0
    */
   persistFilelist () {
-    console.log('LocalFileListWorker:persistFilelist')
+    console.debug('LocalFileListWorker:persistFilelist')
     this.db.setIndexLocal(this.filelist)
 
     this._indexing = false
@@ -239,5 +270,14 @@ module.exports = class LocalFileListWorker {
     if (index === files.length - 1) {
       resolve(this.filelist)
     }
+  }
+
+  /**
+   * Returns the local file list
+   * @since 1.0.0
+   * @returns {Array.<Object>} Local file list
+   */
+  getFileList () {
+    return this.filelist
   }
 }

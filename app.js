@@ -8,10 +8,14 @@ let dbx = new Dropbox()
 const fs = require('./util/fs')
 
 const Db = require('./class/db')
+const NodeboxEventEmitter = require('./class/eventEmitter')
+const EventEmitter = new NodeboxEventEmitter()
 
 const ServerFileListWorker = require('./worker/ServerFileListWorker')
 const LocalFileListWorker = require('./worker/LocalFileListWorker')
 const MergeWorker = require('./worker/MergeWorker')
+
+console.info('Starting Nodebox! ...')
 
 /**
  * Settings
@@ -19,7 +23,7 @@ const MergeWorker = require('./worker/MergeWorker')
 let db = new Db({
   path: '/.dotfiles/testfolder'
 })
-console.info('DB:', db.getAll())
+console.debug('DB:', db.getAll())
 
 /**
  * Read db file
@@ -33,7 +37,7 @@ console.info('DB:', db.getAll())
 /**
  * Setup storage folder
  */
-console.info('StoragePath: ', db.getSettings('storagePath'))
+console.debug('StoragePath: ', db.getSettings('storagePath'))
 fs.mkdirIfNotExists(db.getSettings('storagePath'))
 
 /**
@@ -43,34 +47,39 @@ fs.mkdirIfNotExists(db.getSettings('storagePath'))
  */
 let go = function run () {
   if (db.getSettings('accessToken')) {
-        /**
-         * Set access token from config file or prompt
-         */
+    /**
+     * Set access token from config file or prompt
+     */
     dbx.setAccessToken(db.getSettings('accessToken'))
 
-        /**
-         * start serverFileListWorker
-         * + fetch filelist from server (keep only in memory, since it is fetched on every startup)
-         * + subscribe to longpoll endpoint and fetch changes, as soon as there are some to server filelist
-         */
-    let serverFileListWorker = new ServerFileListWorker(dbx, db)
+    /**
+     * start serverFileListWorker
+     * + fetch filelist from server (keep only in memory, since it is fetched on every startup)
+     * + subscribe to longpoll endpoint and fetch changes, as soon as there are some to server filelist
+     */
+    let serverFileListWorker = new ServerFileListWorker(dbx, db, EventEmitter)
+    console.info('ServerFileListWorker started!')
 
-        /**
-         * start localFileListWorker
-         * + create/update local index by analysing filesystem (including file hashes) and store to file
-         */
-    let localFileListWorker = new LocalFileListWorker(dbx, db)
+    /**
+     * start localFileListWorker
+     * + create/update local index by analysing filesystem (including file hashes) and store to file
+     */
+    let localFileListWorker = new LocalFileListWorker(dbx, db, EventEmitter)
+    console.info('LocalFileListWorker started!')
 
-        /**
-         * start mergeWorker
-         * + based on filelist from server and local index create a download queue for downloadWorker
-         */
-    let mergeWorker = new MergeWorker(serverFileListWorker, localFileListWorker)
+    /**
+     * start mergeWorker
+     * + based on filelist from server and local index create a download queue for downloadWorker
+     */
+    let mergeWorker = new MergeWorker(serverFileListWorker, localFileListWorker, EventEmitter)
+    console.info('MergeWorker started!')
 
-        /**
-         * start downloadWorker
-         * + download files from list created by mergeWorker
-         */
+    /**
+     * start downloadWorker
+     * + download files from list created by mergeWorker
+     */
+
+    console.info('Nodebox up and runnig :D')
   }
 }
 
