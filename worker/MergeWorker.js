@@ -25,6 +25,7 @@ module.exports = class MergeWorker {
     this._em = eventEmitter
 
     this.downloadQueue = []
+    this.uploadQueue = []
 
     this._ready = {
       localWorker: false,
@@ -32,16 +33,19 @@ module.exports = class MergeWorker {
     }
 
     this._merging = false
+
+    this.startListeners()
   }
 
   startListeners () {
     this._em.once('localWorker:ready', () => {
       this._ready.localWorker = true
+      if (this.bothReady()) {
+        this.initialMerge()
+      }
     })
     this._em.once('serverWorker:ready', () => {
       this._ready.serverWorker = true
-    })
-    this._em.once('localWorker:ready serverWorker:ready', () => {
       if (this.bothReady()) {
         this.initialMerge()
       }
@@ -54,7 +58,6 @@ module.exports = class MergeWorker {
       this.serverWorkerChanged()
     })
   }
-
 
   initialMerge() {
     let local = this.localFileListWorker.getFileList()

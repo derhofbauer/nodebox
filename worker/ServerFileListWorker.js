@@ -123,11 +123,11 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
    */
   addEntryTolist (entry) {
     // console.log('ServerFileListWorker:addEntryToList')
-    if (entry.id) {
-      this.filelist[entry.id] = entry
-    } else {
+    // if (entry.id) {
+    //   this.filelist[entry.id] = entry
+    // } else {
       this.filelist.push(entry)
-    }
+    // }
   }
 
   /**
