@@ -5,7 +5,7 @@ const fs = require('../util/fs')
 const path = require('../util/path')
 
 const FileHasher = require('../util/fileHasher')
-const FileListWorker = require('../class/FileListWorker')
+const FileListWorkerBase = require('../class/FileListWorkerBase')
 
 /**
  * This module provides a worker class to index the local storage path and keep
@@ -18,7 +18,7 @@ const FileListWorker = require('../class/FileListWorker')
  * @type {module.LocalFileListWorker}
  * @since 1.0.0
  */
-module.exports = class LocalFileListWorker extends FileListWorker {
+module.exports = class LocalFileListWorker extends FileListWorkerBase {
 
   /**
    * Create local file list and start listener.
@@ -30,27 +30,14 @@ module.exports = class LocalFileListWorker extends FileListWorker {
    *   on instantiation.
    */
   constructor (dbx, db, eventEmitter, startIndexingOnCreation = true) {
-    this.dbx = dbx
+    super(dbx, eventEmitter)
+
     this.db = db
-
-    /**
-     * EventEmitter
-     * @member {NodeboxEventEmitter}
-     */
-    this._em = eventEmitter
-
-    this.filelist = []
 
     if (startIndexingOnCreation === true) {
       this.index()
     }
     this.startWatcher()
-
-    /**
-     * Indexing switch; true when indexing, false when idle
-     * @member {boolean}
-     */
-    this._indexing = false
 
     /**
      * File system watcher
@@ -184,15 +171,6 @@ module.exports = class LocalFileListWorker extends FileListWorker {
     this.db.setIndexLocal(this.filelist)
 
     this._indexing = false
-  }
-
-  /**
-   * Returns current indexing status.
-   * @since 1.0.0
-   * @returns {boolean} True when indexing, false when idle
-   */
-  isIndexing () {
-    return this._indexing
   }
 
   /**

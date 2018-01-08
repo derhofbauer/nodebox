@@ -1,6 +1,7 @@
 'use strict'
 
 const errorHandler = require('../util/errorHandler')
+const FileListWorkerBase = require('../class/FileListWorkerBase')
 
 /**
  * This module provides a worker class to fetch a filelist from Dropbox and keep
@@ -8,7 +9,7 @@ const errorHandler = require('../util/errorHandler')
  * @type {module.ServerFileListWorker}
  * @since 1.0.0
  */
-module.exports = class ServerFileListWorker {
+module.exports = class ServerFileListWorker extends FileListWorkerBase {
 
   /**
    * Fetch file list from Dropbox API and keep it updated
@@ -20,27 +21,15 @@ module.exports = class ServerFileListWorker {
    *   on instantiation.
    */
   constructor (dbx, settings, eventEmitter, loadFilelistOnCreation = true) {
-    this.dbx = dbx
+    super(dbx, eventEmitter)
+
     this.settings = settings
     this.path = this.settings.getSettings('path')
-
-    /**
-     * EventEmitter
-     * @member {NodeboxEventEmitter}
-     */
-    this._em = eventEmitter
-
-    this.filelist = []
 
     if (loadFilelistOnCreation === true) {
       this.fetchFileListAndKeepUpdated()
     }
 
-    /**
-     * Indexing switch; true when indexing, false when idle
-     * @member {boolean}
-     */
-    this._indexing = false
     /**
      * Longpolling switch; true when indexing, false when idle
      * @member {boolean}
@@ -210,15 +199,6 @@ module.exports = class ServerFileListWorker {
       include_media_info: false,
       include_mounted_folders: true
     }
-  }
-
-  /**
-   * Helper method to check indexing switch
-   * @since 1.0.0
-   * @returns {boolean} True when indexing, false when idle
-   */
-  isIndexing () {
-    return this._indexing
   }
 
   /**
