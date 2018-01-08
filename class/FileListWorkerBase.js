@@ -44,4 +44,13 @@ module.exports = class FileListWorkerBase {
   isIndexing () {
     return this._indexing
   }
+
+  /**
+   * Returns the local file list
+   * @since 1.0.0
+   * @returns {Array.<Object>} Local file list
+   */
+  getFileList () {
+    return this.filelist
+  }
 }

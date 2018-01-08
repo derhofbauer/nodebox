@@ -249,13 +249,4 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
       resolve(this.filelist)
     }
   }
-
-  /**
-   * Returns the local file list
-   * @since 1.0.0
-   * @returns {Array.<Object>} Local file list
-   */
-  getFileList () {
-    return this.filelist
-  }
 }

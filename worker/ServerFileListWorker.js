@@ -200,13 +200,4 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
       include_mounted_folders: true
     }
   }
-
-  /**
-   * Returns the local file list
-   * @since 1.0.0
-   * @returns {Array.<Object>} Local file list
-   */
-  getFileList () {
-    return this.filelist
-  }
 }
