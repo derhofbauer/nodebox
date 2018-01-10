@@ -1,5 +1,6 @@
 'use strict'
 
+const lowdb = require('lowdb')
 const async = require('async')
 const ASYNC_PARALLEL_LIMIT = 1
 
@@ -63,7 +64,36 @@ module.exports = class MergeWorker {
     let local = this.localFileListWorker.getFileList()
     let server = this.serverFileListWorker.getFileList()
 
-    console.log('local:', local)
+    console.log(local.map('path_lower').value())
+    // console.log(server.value())
+
+    server.value().forEach((file, index) => {
+      // console.log(file.path_display, local.find({path_lower: file.path_lower}).value() != undefined)
+
+      let localFile = local.find({path_lower: file.path_lower}).value()
+
+      if (localFile != undefined) {
+        console.debug("Path exists!")
+
+        if (file['.tag'] === 'file' && (file.content_hash !== localFile.content_hash || file.size !== localFile.size)) {
+          console.log(`${file.path_display}: Hashes or size do not match!`)
+
+          // check which file was edited more recently and handle conflicts
+          // + File exists on both ends but is newer* locally: upload file overwriting file on server
+          // + File exists on both ends but is newer* on server: download file overwriting local file
+          // + File exists in both ends and has conflicting changes: figure out whether Dropbox handles this case
+        }
+      } else {
+        if (file['.tag'] === 'folder') {
+          console.log(`${file.path_display}: Folder does not exist locally!`)
+          // create folder
+        }
+        if (file['.tag'] === 'file') {
+          console.log(`${file.path_display}: File does not exist locally!`)
+          // download file and add metadata like `rev` to local index
+        }
+      }
+    })
   }
 
   merge () {

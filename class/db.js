@@ -124,4 +124,13 @@ module.exports = class NodeboxDatabase {
     console.debug('NodeboxDatabase:setIndexLocal: ', list)
     this.set('indexLocal', list)
   }
+
+  /**
+   * Helper method to easily retrieve the local filelist stored in our db file.
+   * @since 1.0.0
+   * @returns {Array.<Object>} JSON Object from config file
+   */
+  getIndexLocal () {
+    return this.db.get('indexLocal')
+  }
 }

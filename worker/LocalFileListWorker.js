@@ -39,6 +39,8 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
     }
     this.startWatcher()
 
+    this.filelist = []
+
     /**
      * File system watcher
      * @member {chokidar}
@@ -169,7 +171,26 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
    */
   persistFilelist () {
     console.debug('LocalFileListWorker:persistFilelist')
-    this.db.setIndexLocal(this.filelist)
+
+    this.filelist.forEach((file, index) => {
+      if (this.db.getIndexLocal().find({path_lower: file.path_lower}).value() != undefined) {
+        /**
+         * @todo: .assign(file) should in fact just be a merged version of the existing index value and the new one so `rev` does not get overwritten, for example
+         */
+        this.db.getIndexLocal().find({path_lower: file.path_lower}).assign(file).write()
+      } else {
+        this.db.getIndexLocal().push(file).write()
+      }
+    })
+
+    // check stored index for paths that do not exist anymore in storage folder
+    this.db.getIndexLocal().value().forEach((file) => {
+      let _path = this.getAbsolutePathFromRelative(file.path_display)
+
+      if (!fs.existsSync(_path)) {
+        this.db.getIndexLocal().remove({path_display: file.path_display}).write()
+      }
+    })
 
     this._indexing = false
   }
@@ -190,7 +211,8 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
       path_display: relativePath,
       client_modified: stats.mtime,
       size: stats.size,
-      content_hash: hash
+      content_hash: hash,
+      rev: ''
     }
   }
 
@@ -249,5 +271,14 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
     if (index === files.length - 1) {
       resolve(this.filelist)
     }
+  }
+
+  /**
+   * Returns the local file list
+   * @since 1.0.0
+   * @returns {Array.<Object>} Local file list
+   */
+  getFileList () {
+    return this.db.getIndexLocal()
   }
 }

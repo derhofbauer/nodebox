@@ -3,6 +3,9 @@
 const errorHandler = require('../util/errorHandler')
 const FileListWorkerBase = require('../class/FileListWorkerBase')
 
+const low = require('lowdb')
+const Memory = require('lowdb/adapters/Memory')
+
 /**
  * This module provides a worker class to fetch a filelist from Dropbox and keep
  *   it updated by listening to the longpoll endpoint.
@@ -123,11 +126,7 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
    */
   addEntryTolist (entry) {
     // console.log('ServerFileListWorker:addEntryToList')
-    // if (entry.id) {
-    //   this.filelist[entry.id] = entry
-    // } else {
-      this.filelist.push(entry)
-    // }
+    this.getFileList().push(entry).write()
   }
 
   /**
