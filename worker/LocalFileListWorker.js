@@ -110,21 +110,22 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
   buildRecursiveFileList () {
     console.debug('LocalFileListWorker:buildRecursiveFileList')
     return new Promise((resolve, reject) => {
-      let files = fs.walkSync(this.db.getSettings('storagePath'))
-      files.forEach((absolutePath, index, collection) => {
-        let stats = fs.statSyncError(absolutePath)
+      fs.dir(this.db.getSettings('storagePath')).then((files) => {
+        files.forEach((absolutePath, index, collection) => {
+          let stats = fs.statSyncError(absolutePath)
 
-        // is file
-        if (stats.isFile()) {
-          this.handleFile(absolutePath, stats, index, collection, resolve)
-        }
-        // is directory
-        if (stats.isDirectory()) {
-          this.handleDirectry(absolutePath, index, collection, resolve)
-        }
-        if (!stats.isFile() && !stats.isDirectory()) {
-          reject(new Error(`Error: Path ${absolutePath} is not a file or directory.`))
-        }
+          // is file
+          if (stats.isFile()) {
+            this.handleFile(absolutePath, stats, index, collection, resolve)
+          }
+          // is directory
+          if (stats.isDirectory()) {
+            this.handleDirectry(absolutePath, index, collection, resolve)
+          }
+          if (!stats.isFile() && !stats.isDirectory()) {
+            reject(new Error(`Error: Path ${absolutePath} is not a file or directory.`))
+          }
+        })
       })
     })
   }
@@ -137,8 +138,8 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
    */
   getRelativePathFromAbsolute (absolutePath) {
     return path.addLeadingSlash(
-            path.relatify(absolutePath, this.db.getSettings('storagePath'))
-        )
+      path.relatify(absolutePath, this.db.getSettings('storagePath'))
+    )
   }
 
   /**

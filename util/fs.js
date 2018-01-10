@@ -7,7 +7,7 @@
  */
 
 const fs = require('fs')
-const path = require('./path')
+const dir = require('node-dir')
 
 /**
  * Create directory if it does not exist
@@ -27,34 +27,21 @@ fs.mkdirIfNotExists = (dir) => {
  *
  * @since 1.0.0
  * @param {string} p Path to create a file list of
- * @returns {Array.<string>} Recursive file list
+ * @returns {Promise} Resolves to recursive file list, rejects to error
  */
-fs.walkSync = (p) => {
-  if (fs.statSync(p).isDirectory()) {
-    return fs.readdirSync(p).map((subPath) => {
-      return fs.joinOrWalkSync(p, subPath)
-    })
-  } else {
-    return p
-  }
-}
-
-/**
- * Check if joined paths produce a directory. If they do call `fs.walkSync`,
- *     else return it, because it is a file.
- *
- * @since 1.0.0
- * @param {string} p Current working path
- * @param {string} subPath One item below `p`
- * @returns {(string|Array.<string>)}
- */
-fs.joinOrWalkSync = (p, subPath) => {
-  let fullPath = path.join(p, subPath)
-
-  if (fs.statSync(fullPath).isDirectory()) {
-    return fullPath
-  }
-  return fs.walkSync(fullPath)
+fs.dir = (p) => {
+  return new Promise((resolve, reject) => {
+    if (fs.statSync(p).isDirectory()) {
+      dir.paths(p, true, (err, paths) => {
+        if (err) {
+          reject(err)
+        }
+        resolve(paths.sort())
+      })
+    } else {
+      resolve(p)
+    }
+  })
 }
 
 /**

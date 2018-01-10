@@ -62,6 +62,8 @@ module.exports = class MergeWorker {
   initialMerge() {
     let local = this.localFileListWorker.getFileList()
     let server = this.serverFileListWorker.getFileList()
+
+    console.log('local:', local)
   }
 
   merge () {
