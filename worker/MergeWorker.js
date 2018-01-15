@@ -60,7 +60,7 @@ module.exports = class MergeWorker {
     })
   }
 
-  initialMerge() {
+  initialMerge () {
     let local = this.localFileListWorker.getFileList()
     let server = this.serverFileListWorker.getFileList()
 
@@ -81,7 +81,7 @@ module.exports = class MergeWorker {
           // check which file was edited more recently and handle conflicts
           // + File exists on both ends but is newer* locally: upload file overwriting file on server
           // + File exists on both ends but is newer* on server: download file overwriting local file
-          // + File exists in both ends and has conflicting changes: figure out whether Dropbox handles this case
+          // + File exists in both ends and has conflicting changes: figure out whether Dropbox handles this case or we have to do it
         }
       } else {
         if (file['.tag'] === 'folder') {
@@ -93,6 +93,8 @@ module.exports = class MergeWorker {
           // download file and add metadata like `rev` to local index
         }
       }
+
+      // @todo: check for local files, that don't exist on the server yet!
     })
   }
 
@@ -108,15 +110,15 @@ module.exports = class MergeWorker {
     }
   }
 
-  serverWorkerChanged() {
+  serverWorkerChanged () {
 
   }
 
-  localWorkerChanged() {
+  localWorkerChanged () {
 
   }
 
-  bothReady() {
+  bothReady () {
     return (
       this._ready.localWorker === true &&
       this._ready.serverWorker === true)

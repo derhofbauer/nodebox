@@ -121,7 +121,7 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
   }
 
   /**
-   * Ppushes an entry to the file list attribute
+   * Pushes an entry to the file list attribute
    * @param {Object.<string,*>} entry File or directory object from Dropbox API
    */
   addEntryTolist (entry) {
@@ -130,7 +130,7 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
   }
 
   /**
-   * Listenes to the longpoll endpoint of Dropbox API and handles changes.
+   * Listens to the longpoll endpoint of Dropbox API and handles changes.
    * @since 1.0.0
    */
   subscribeLongPoll () {
@@ -191,7 +191,7 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
    * @since 1.0.0
    * @returns {{path: mixed|MediaTrackSettings|*, recursive: boolean, include_media_info: boolean, include_mounted_folders: boolean}}
    */
-  getDefaultConfig() {
+  getDefaultConfig () {
     return {
       path: this.path,
       recursive: true,
