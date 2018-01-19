@@ -79,7 +79,9 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
   /**
    * Starts a filesystem event listener using `fs.watch`.
    *
-   * @todo: handle filesystem events correctly and do stuff other than logging it!
+   * @todo: handle filesystem events more atomic. Now we just re-index
+   * @todo: everything, which is pretty bad. We just need to re-index this
+   * @todo: specific path!
    *
    * @since 1.0.0
    * @returns {fs.FSWatcher} File system watcher
@@ -93,9 +95,15 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
     this._watcher.on('ready', () => {
       console.log(`Initial scan complete, watcher is now ready!`)
       this._watcherReady = true
-    })
-    this._watcher.on('all', (eventName, path) => {
-      console.debug(`Event ${eventName} was emitted on ${path}.`)
+
+      this._watcher.on('all', (eventName, path) => {
+        console.log(`Event ${eventName} was emitted on ${path}.`)
+      })
+      Array.from(['add', 'change', 'unlink', 'addDir', 'unlinkDir']).forEach((event) => {
+        this._watcher.on(event, (path) => {
+          this.index()
+        })
+      })
     })
     this._watcher.on('error', (err) => {
       throw new Error(err)
