@@ -72,8 +72,8 @@ module.exports = class MergeWorker {
 
       let localFile = local.find({path_lower: file.path_lower}).value()
 
-      if (localFile != undefined) {
-        console.debug("Path exists!")
+      if (localFile !== undefined) {
+        console.debug(`${file.path_display}: Path exists locally!`)
 
         if (file['.tag'] === 'file' && (file.content_hash !== localFile.content_hash || file.size !== localFile.size)) {
           console.log(`${file.path_display}: Hashes or size do not match!`)
@@ -90,11 +90,28 @@ module.exports = class MergeWorker {
         }
         if (file['.tag'] === 'file') {
           console.log(`${file.path_display}: File does not exist locally!`)
-          // download file and add metadata like `rev` to local index
+          // handle file download
+          // + download file
+          // + add new metadata like `rev` to local index, merging with existing metadata
         }
       }
+    })
 
-      // @todo: check for local files, that don't exist on the server yet!
+    // @todo: check for local files, that don't exist on the server yet!
+    local.value().forEach((file, index) => {
+      // console.log(file.path_display, server.find({path_lower: file.path_lower}).value() != undefined)
+      let serverFile = server.find({path_lower: file.path_lower}).value()
+
+      if (serverFile !== undefined) {
+        console.log(`${file.path_display}: Path exists on server!`)
+      } else {
+        if (file['.tag'] === 'folder') {
+          console.log(`${file.path_display}: Folder does not exist on server!`)
+        }
+        if (file['.tag'] === 'file') {
+          console.log(`${file.path_display}: File does not exist on server!`)
+        }
+      }
     })
   }
 
