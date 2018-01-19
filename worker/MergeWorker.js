@@ -42,13 +42,13 @@ module.exports = class MergeWorker {
     this._em.once('localWorker:ready', () => {
       this._ready.localWorker = true
       if (this.bothReady()) {
-        this.initialMerge()
+        this.merge()
       }
     })
     this._em.once('serverWorker:ready', () => {
       this._ready.serverWorker = true
       if (this.bothReady()) {
-        this.initialMerge()
+        this.merge()
       }
     })
 
@@ -60,7 +60,11 @@ module.exports = class MergeWorker {
     })
   }
 
-  initialMerge () {
+  /**
+   * @todo: handle .deleted event!
+   * @todo: also handle rename events that consist of .deleted and new .file or .folder by comparing hashes before removing and entry!
+   */
+  /* initialMerge () {
     let local = this.localFileListWorker.getFileList()
     let server = this.serverFileListWorker.getFileList()
 
@@ -82,6 +86,12 @@ module.exports = class MergeWorker {
           // + File exists on both ends but is newer* locally: upload file overwriting file on server
           // + File exists on both ends but is newer* on server: download file overwriting local file
           // + File exists in both ends and has conflicting changes: figure out whether Dropbox handles this case or we have to do it
+
+          // before downloading check if we already got a file with the same hash
+        }
+        if (file['.tag'] === 'deleted') {
+          // delete file if this file has not just been renamed!
+          // otherwise rename file
         }
       } else {
         if (file['.tag'] === 'folder') {
@@ -91,19 +101,19 @@ module.exports = class MergeWorker {
         if (file['.tag'] === 'file') {
           console.log(`${file.path_display}: File does not exist locally!`)
           // handle file download
-          // + download file
+          // + download file (before downloading check if we already got a file with the same hash)
           // + add new metadata like `rev` to local index, merging with existing metadata
         }
       }
     })
 
-    // @todo: check for local files, that don't exist on the server yet!
     local.value().forEach((file, index) => {
       // console.log(file.path_display, server.find({path_lower: file.path_lower}).value() != undefined)
       let serverFile = server.find({path_lower: file.path_lower}).value()
 
       if (serverFile !== undefined) {
         console.log(`${file.path_display}: Path exists on server!`)
+
       } else {
         if (file['.tag'] === 'folder') {
           console.log(`${file.path_display}: Folder does not exist on server!`)
@@ -113,11 +123,17 @@ module.exports = class MergeWorker {
         }
       }
     })
-  }
+  } */
 
   merge () {
     this._merging = true
-    // do stuff
+
+    let server = this.serverFileListWorker.getFileList()
+    let local = this.localFileListWorker.getFileList()
+
+    console.log(local.map('path_lower').value())
+    console.log(server.map('path_lower').value())
+
     this._merging = false
   }
 
