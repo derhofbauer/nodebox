@@ -1,6 +1,7 @@
 'use strict'
 
 const chokidar = require('chokidar')
+const _ = require('lodash')
 const fs = require('../util/fs')
 const path = require('../util/path')
 
@@ -35,10 +36,10 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
     this.db = db
 
     if (startIndexingOnCreation === true) {
-      this.index()
+      this.index().then(() => {
+        this.startWatcher()
+      })
     }
-    this.startWatcher()
-
     this.filelist = []
 
     /**
@@ -52,18 +53,27 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
   /**
    * Builds recursive file list and handles indexing switch.
    * @since 1.0.0
+   * @returns {Promise<any>} Resolves on successful index, rejects on error
    */
   index () {
     console.debug('LocalFileListWorker:index')
 
-    if (!this._indexing) {
-      this._indexing = true
+    return new Promise((resolve, reject) => {
+      if (!this._indexing) {
+        this._indexing = true
 
-      this.buildRecursiveFileList().then(() => {
-        this._em.emit('localWorker:ready')
-        this.persistFilelist()
-      })
-    }
+        this.buildRecursiveFileList().then(() => {
+          this.persistFilelist()
+            .then(() => {
+              this._em.emit('localWorker:ready')
+              resolve()
+            })
+        }).catch((err) => {
+          console.log(err)
+          reject()
+        })
+      }
+    })
   }
 
   /**
@@ -81,7 +91,7 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
       awaitWriteFinish: true
     })
     this._watcher.on('ready', () => {
-      console.debug(`Initial scan complete, watcher is now ready!`)
+      console.log(`Initial scan complete, watcher is now ready!`)
       this._watcherReady = true
     })
     this._watcher.on('all', (eventName, path) => {
@@ -112,23 +122,62 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
   buildRecursiveFileList () {
     console.debug('LocalFileListWorker:buildRecursiveFileList')
     return new Promise((resolve, reject) => {
-      fs.dir(this.db.getSettings('storagePath')).then((files) => {
-        files.forEach((absolutePath, index, collection) => {
-          let stats = fs.statSyncError(absolutePath)
 
-          // is file
-          if (stats.isFile()) {
-            this.handleFile(absolutePath, stats, index, collection, resolve)
-          }
-          // is directory
-          if (stats.isDirectory()) {
-            this.handleDirectry(absolutePath, index, collection, resolve)
-          }
-          if (!stats.isFile() && !stats.isDirectory()) {
-            reject(new Error(`Error: Path ${absolutePath} is not a file or directory.`))
-          }
+      this._em.emit('localWorker:indexing:start')
+
+      fs.dir(this.db.getSettings('storagePath')).then((files) => {
+
+        files.forEach((absolutePath, index, collection) => {
+          this.handleDirResult(absolutePath)
+            .then(() => {
+              if (index === collection.length - 1) {
+                this._em.emit('localWorker:indexing:done')
+                resolve(this.filelist)
+              }
+            }).catch((err) => {
+              this._em.emit('localWorker:indexing:error')
+              reject(err)
+            })
         })
+
       })
+    })
+  }
+
+  /**
+   * Handles one single item from local indexing process
+   * @param {string} absolutePath Path to handle
+   * @returns {Promise<any>} Resolves when item has been handled successfully,
+   *   rejects on error
+   */
+  handleDirResult(absolutePath) {
+    return new Promise((resolve, reject) => {
+      let stats = fs.statSyncError(absolutePath)
+
+      // is file
+      if (stats.isFile()) {
+        this.handleFile(absolutePath, stats)
+          .then((file) => {
+            resolve(file)
+          }).catch((err) => {
+            reject(err)
+          })
+      }
+
+      // is directory
+      if (stats.isDirectory()) {
+        this.handleDirectory(absolutePath, stats)
+          .then((directory) => {
+            resolve(directory)
+          }).catch((err) => {
+            reject(err)
+          })
+      }
+
+      // is something else, which would be very weird
+      if (!stats.isFile() && !stats.isDirectory()) {
+        reject(new Error(`Error: Path ${absolutePath} is not a file or directory.`))
+      }
     })
   }
 
@@ -168,31 +217,94 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
   /**
    * Persists the computed filelist using this.db persisting methods.
    * @since 1.0.0
+   * @return {Promise<any>} Resolves when all operations are done successfully
    */
   persistFilelist () {
     console.debug('LocalFileListWorker:persistFilelist')
 
-    this.filelist.forEach((file, index) => {
-      if (this.db.getIndexLocal().find({path_lower: file.path_lower}).value() != undefined) {
-        /**
-         * @todo: .assign(file) should in fact just be a merged version of the existing index value and the new one so `rev` does not get overwritten, for example
-         */
-        this.db.getIndexLocal().find({path_lower: file.path_lower}).assign(file).write()
-      } else {
-        this.db.getIndexLocal().push(file).write()
-      }
+    return new Promise((resolve, reject) => {
+      this.mergePersistedWithTmpIndex()
+        .then(() => {
+          return this.removeDeletedFilesFromIndex()
+        })
+        .then(() => {
+          return this.removeDuplicatesFromIndex()
+        })
+        .then(() => {
+          resolve()
+        }).catch((err) => {
+          console.log(err)
+          reject(err)
+      })
+
+      this._indexing = false
     })
+  }
 
-    // check stored index for paths that do not exist anymore in storage folder
-    this.db.getIndexLocal().value().forEach((file) => {
-      let _path = this.getAbsolutePathFromRelative(file.path_display)
+  /**
+   * Merges currently indexed entries into persisted file list entries
+   * @since 1.0.0
+   * @returns {Promise<any>} Always resolves after last iteration
+   */
+  mergePersistedWithTmpIndex () {
+    return new Promise((resolve) => {
+      this.filelist.forEach((file, index, collection) => {
+        // merge persisted index with currently index files
+        let persistedEntry = this.db.getIndexLocal().find({path_lower: file.path_lower}).value()
 
-      if (!fs.existsSync(_path)) {
-        this.db.getIndexLocal().remove({path_display: file.path_display}).write()
-      }
+        if (persistedEntry) {
+          let _merged = _.merge(persistedEntry, file)
+          this.db.getIndexLocal().find({path_lower: file.path_lower}).assign(_merged).write()
+        } else {
+          this.db.getIndexLocal().push(file).write()
+        }
+
+        if (index === collection.length - 1) {
+          resolve(this.getFileList())
+        }
+      })
     })
+  }
 
-    this._indexing = false
+  /**
+   * Removes files from persisted index, that do not live on local disk anymore
+   * @since 1.0.0
+   * @returns {Promise<any>} Always resolves after last iteration
+   */
+  removeDeletedFilesFromIndex () {
+    return new Promise((resolve) => {
+      // check stored index for paths that do not exist anymore in storage folder
+      this.db.getIndexLocal().value().forEach((file, index, collection) => {
+        let _path = this.getAbsolutePathFromRelative(file.path_display)
+
+        if (!fs.existsSync(_path)) {
+          this.db.getIndexLocal().remove({path_display: file.path_display}).write()
+        }
+
+        if (index === collection.length - 1) {
+          resolve(this.getFileList())
+        }
+      })
+    })
+  }
+
+  /**
+   * Removes duplicate entries from persisted file list; uses deep compare
+   * @since 1.0.0
+   * @returns {Promise<any>} Always resolves after new list is persisted
+   */
+  removeDuplicatesFromIndex () {
+    return new Promise((resolve) => {
+      let _tmp = _.sortBy(this.db.getIndexLocal().value(), 'path_lower')
+      _tmp.forEach((element, index) => {
+        if (_.isEqual(element, _tmp[index - 1])) {
+          _tmp.splice(index, 1)
+        }
+      })
+      this.db.setIndexLocal(_tmp)
+
+      resolve(this.getFileList())
+    })
   }
 
   /**
@@ -236,21 +348,19 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
    * @since 1.0.0
    * @param {string} absolutePath Absolute path of current file
    * @param {fs.Stats} stats Current file information
-   * @param {number} index Index of current iteration
-   * @param {Array.<string>} files The array we are currently iterating over
-   * @param {function} resolve The parent promise's resolve method
+   * @return {Promise<any>} Resolves when file object was successfully added
    */
-  handleFile (absolutePath, stats, index, files, resolve) {
-    new FileHasher(absolutePath).then((hash) => {
-      let relativePath = this.getRelativePathFromAbsolute(absolutePath)
-      let file = this.prepareFile(relativePath, stats, hash)
-      this.filelist.push(file)
-
-      if (index === files.length - 1) {
-        resolve(this.filelist)
-      }
-    }).catch((err) => {
-      console.log(err)
+  handleFile (absolutePath, stats) {
+    return new Promise((resolve, reject) => {
+      new FileHasher(absolutePath).then((hash) => {
+        let relativePath = this.getRelativePathFromAbsolute(absolutePath)
+        let file = this.prepareFile(relativePath, stats, hash)
+        this.filelist.push(file)
+        resolve(file)
+      }).catch((err) => {
+        console.log(err)
+        reject(err)
+      })
     })
   }
 
@@ -258,19 +368,16 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
    * Handle indexing of one single directory
    * @since 1.0.0
    * @param {string} absolutePath Absolute path of current file
-   * @param {number} index Index of current iteration
-   * @param {Array.<string>} files The array we are currently iterating over
-   * @param {function} resolve The parent promise's resolve method
+   * @return {Promise<any>} Resolves when folder object was successfully added
    */
-  handleDirectry (absolutePath, index, files, resolve) {
-    let relativePath = this.getRelativePathFromAbsolute(absolutePath)
-    let directory = this.prepareDirectory(relativePath)
-    console.debug('Directory:', directory)
-    this.filelist.push(directory)
-
-    if (index === files.length - 1) {
-      resolve(this.filelist)
-    }
+  handleDirectory (absolutePath) {
+    return new Promise((resolve) => {
+      let relativePath = this.getRelativePathFromAbsolute(absolutePath)
+      let directory = this.prepareDirectory(relativePath)
+      console.debug('Directory:', directory)
+      this.filelist.push(directory)
+      resolve(directory)
+    })
   }
 
   /**
