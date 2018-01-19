@@ -2,6 +2,7 @@
 
 const _ = require('lodash')
 const path = require('../util/path')
+const fs = require('../util/fs')
 
 const low = require('lowdb')
 const FileSync = require('lowdb/adapters/FileSync')
@@ -14,7 +15,6 @@ const FileSync = require('lowdb/adapters/FileSync')
  * @since 1.0.0
  */
 module.exports = class NodeboxDatabase {
-
   /**
    * Initialize LowDB instance
    * @since 1.0.0
@@ -32,6 +32,8 @@ module.exports = class NodeboxDatabase {
 
     let _merged = _.merge(_defaults, customSettings)
 
+    fs.mkdirIfNotExists(_merged.settingsFolder)
+
     /**
      * LowDB instance
      * @since 1.0.0
@@ -42,7 +44,11 @@ module.exports = class NodeboxDatabase {
     this.db = low(new FileSync(_merged.settingsPath))
 
     this.db.read()
-    this.db.defaults({ indexLocal: [], indexServer: [], settings: _defaults
+
+    this.db.defaults({
+      indexLocal: [],
+      indexServer: [],
+      settings: _defaults
     }).write()
 
     _.forEach(customSettings, (value, key) => {
@@ -50,6 +56,7 @@ module.exports = class NodeboxDatabase {
     })
 
     this.persist()
+
   }
 
   /**
