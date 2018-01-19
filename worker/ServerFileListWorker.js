@@ -46,9 +46,9 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
    */
   fetchFileListAndKeepUpdated () {
     this._indexing = true
-    console.debug(this.getDefaultConfig())
+    console.debug(this.getDefaultParams())
     this.dbx.filesListFolder(
-      this.getDefaultConfig()
+      this.getDefaultParams()
     ).then((response) => {
       // console.log('ServerFileListWorker:fetchFileListAndKeepUpdated')
       this.handleListFolderReponse(response)
@@ -173,7 +173,7 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
 
     if (lastCursor === '') {
       this.dbx.filesListFolderGetLatestCursor(
-        this.getDefaultConfig()
+        this.getDefaultParams()
       ).then((response) => {
         this.handleCursor(response)
         return this.settings.getSettings('lastCursor')
@@ -191,7 +191,7 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
    * @since 1.0.0
    * @returns {{path: mixed|MediaTrackSettings|*, recursive: boolean, include_media_info: boolean, include_mounted_folders: boolean}}
    */
-  getDefaultConfig () {
+  getDefaultParams () {
     return {
       path: this.path,
       recursive: true,
