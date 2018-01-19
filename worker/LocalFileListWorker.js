@@ -12,10 +12,6 @@ const FileListWorkerBase = require('../class/FileListWorkerBase')
  * This module provides a worker class to index the local storage path and keep
  *   the index updated by listening to certain filesystem events.
  *
- * @todo: file watcher needs to listen for certain events and handle them.
- * @todo: When a file is changed or a new file is created by the downloadWorker
- * @todo: module, it needs to be indexed.
- *
  * @type {module.LocalFileListWorker}
  * @since 1.0.0
  */
@@ -66,11 +62,11 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
           this.persistFilelist()
             .then(() => {
               this._em.emit('localWorker:ready')
-              resolve()
+              resolve(this.getFileList())
             })
         }).catch((err) => {
           console.log(err)
-          reject()
+          reject(err)
         })
       }
     })
@@ -108,6 +104,7 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
           this.db.getIndexLocal().remove({
             path_display: this.getRelativePathFromAbsolute(path)
           }).write()
+          this._em.emit(`localWorker:change`)
         })
       })
     })

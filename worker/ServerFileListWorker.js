@@ -151,6 +151,7 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
 
       if (response.changes === true) {
         this.fetchFileListContinue()
+        this._em.emit('serverWorker:change')
       }
     }).catch((err) => {
       console.debug('ServerFileListWorker:subscribeLongPoll:catch')
