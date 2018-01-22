@@ -91,18 +91,25 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
    * Handles Dropbox API response and starts longpolling if this was the last bit
    * @since 1.0.0
    * @param {Object.<string,*>} response Filelist or error from Dropbox API
+   * @return {Promise<any>} Always resolves
    */
   handleListFolderReponse (response) {
-    console.debug('ServerFileListWorker:handleListFolderResponse')
-    this.handleCursor(response)
+    return new Promise((resolve) => {
+      console.debug('ServerFileListWorker:handleListFolderResponse')
+      this.handleCursor(response)
 
-    response.entries.forEach((entry) => {
-      this.addEntryTolist(entry)
+      response.entries.forEach((entry, index, collection) => {
+        this.addEntryTolist(entry)
+
+        if (index === collection.length - 1) {
+          resolve()
+        }
+      })
+
+      if (!response.has_more && !this._longpolling) {
+        this.subscribeLongPoll()
+      }
     })
-
-    if (!response.has_more && !this._longpolling) {
-      this.subscribeLongPoll()
-    }
   }
 
   /**
