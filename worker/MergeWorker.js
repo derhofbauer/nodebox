@@ -63,6 +63,25 @@ module.exports = class MergeWorker {
   /**
    * @todo: handle .deleted event!
    * @todo: also handle rename events that consist of .deleted and new .file or .folder by comparing hashes before removing and entry!
+   *
+   * possible .tags:
+   * + file
+   * + folder
+   * + deleted
+   *
+   * Considering renames and moves this has to work as follows:
+   * + First of all we need to create all folders
+   * + Then we need to calculate moves (including renames)
+   *    + a moved/renamed file will be emitted by the API as a new file and a
+   *      deleted file; when therefore can calculate whether a file was moved
+   *      or only deleted (based on file hash). Before downloading a file we
+   *      need to check if we already got a file with the same hash and if this
+   *      file needs to be deleted, ergo: this file needs to be moved.
+   * + Then we need to download files, checking hashes to avoid unnecessary
+   *   downloads.
+   * + Then we need to delete all files, that need to be deleted and not moved/renamed.
+   *
+   * s. https://github.com/derhofbauer/nodebox/issues/22 for mroe information.
    */
   /* initialMerge () {
     let local = this.localFileListWorker.getFileList()

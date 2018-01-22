@@ -36,6 +36,7 @@
     "nodemon": "nodemon app.js",
     "eslint": "eslint **.js ./**/*.js",
     "standard": "standard **.js ./**/*.js",
-    "jsdoc": "jsdoc **.js ./**/*.js -r"
+    "jsdoc": "jsdoc **.js ./**/*.js -r",
+    "test": "yarn run eslint && yarn run standard"
   }
 }
