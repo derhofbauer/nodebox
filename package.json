@@ -2,7 +2,7 @@
   "name": "nodebox",
   "version": "1.0.0",
   "description": "Node.js Dropbox Client",
-  "main": "app.js",
+  "main": "index.js",
   "author": "Alexander Hofbauer",
   "license": "MIT",
   "dependencies": {
@@ -15,11 +15,15 @@
     "node-dir": "^0.1.17",
     "os": "^0.1.1",
     "path": "^0.12.7",
+    "path-exists": "^3.0.0",
     "prompt": "^1.0.0"
   },
   "devDependencies": {
+    "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
     "eslint": "^4.14.0",
     "jsdoc": "^3.5.5",
+    "mocha": "^5.0.0",
     "nodemon": "^1.14.7",
     "standard": "^10.0.3"
   },
@@ -33,9 +37,11 @@
   "scripts": {
     "dev": "yarn run init && yarn run nodemon",
     "init": "yarn",
-    "nodemon": "nodemon app.js",
+    "nodemon": "nodemon index.js",
     "eslint": "eslint **.js ./**/*.js",
     "standard": "standard **.js ./**/*.js",
-    "jsdoc": "jsdoc **.js ./**/*.js -r"
+    "jsdoc": "jsdoc **.js ./**/*.js -r",
+    "lint": "yarn run eslint && yarn run standard",
+    "test": "mocha ./test/**/*.js ./test/**.js"
   }
 }

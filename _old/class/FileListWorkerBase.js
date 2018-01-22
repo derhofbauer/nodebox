@@ -1,5 +1,8 @@
 'use strict'
 
+const low = require('lowdb')
+const Memory = require('lowdb/adapters/Memory')
+
 /**
  * This module provides a base class for FileListWorkers.
  *   Common functions and members are defined here and inherited into the
@@ -31,9 +34,10 @@ module.exports = class FileListWorkerBase {
     this._em = eventEmitter
 
     /**
-     * @member {Array}
+     * @member {Lowdb}
      */
-    this.filelist = []
+    this.filelist = low(new Memory())
+    this.filelist.defaults({ filelist: [] }).write()
   }
 
   /**
@@ -51,6 +55,6 @@ module.exports = class FileListWorkerBase {
    * @returns {Array.<Object>} Local file list
    */
   getFileList () {
-    return this.filelist
+    return this.filelist.get('filelist')
   }
 }

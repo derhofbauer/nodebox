@@ -43,9 +43,9 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
    */
   fetchFileListAndKeepUpdated () {
     this._indexing = true
-    console.debug(this.getDefaultConfig())
+    console.debug(this.getDefaultParams())
     this.dbx.filesListFolder(
-      this.getDefaultConfig()
+      this.getDefaultParams()
     ).then((response) => {
       // console.log('ServerFileListWorker:fetchFileListAndKeepUpdated')
       this.handleListFolderReponse(response)
@@ -91,18 +91,25 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
    * Handles Dropbox API response and starts longpolling if this was the last bit
    * @since 1.0.0
    * @param {Object.<string,*>} response Filelist or error from Dropbox API
+   * @return {Promise<any>} Always resolves
    */
   handleListFolderReponse (response) {
-    console.debug('ServerFileListWorker:handleListFolderResponse')
-    this.handleCursor(response)
+    return new Promise((resolve) => {
+      console.debug('ServerFileListWorker:handleListFolderResponse')
+      this.handleCursor(response)
 
-    response.entries.forEach((entry) => {
-      this.addEntryTolist(entry)
+      response.entries.forEach((entry, index, collection) => {
+        this.addEntryTolist(entry)
+
+        if (index === collection.length - 1) {
+          resolve()
+        }
+      })
+
+      if (!response.has_more && !this._longpolling) {
+        this.subscribeLongPoll()
+      }
     })
-
-    if (!response.has_more && !this._longpolling) {
-      this.subscribeLongPoll()
-    }
   }
 
   /**
@@ -118,20 +125,16 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
   }
 
   /**
-   * Ppushes an entry to the file list attribute
+   * Pushes an entry to the file list attribute
    * @param {Object.<string,*>} entry File or directory object from Dropbox API
    */
   addEntryTolist (entry) {
     // console.log('ServerFileListWorker:addEntryToList')
-    // if (entry.id) {
-    //   this.filelist[entry.id] = entry
-    // } else {
-      this.filelist.push(entry)
-    // }
+    this.getFileList().push(entry).write()
   }
 
   /**
-   * Listenes to the longpoll endpoint of Dropbox API and handles changes.
+   * Listens to the longpoll endpoint of Dropbox API and handles changes.
    * @since 1.0.0
    */
   subscribeLongPoll () {
@@ -155,6 +158,7 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
 
       if (response.changes === true) {
         this.fetchFileListContinue()
+        this._em.emit('serverWorker:change')
       }
     }).catch((err) => {
       console.debug('ServerFileListWorker:subscribeLongPoll:catch')
@@ -174,7 +178,7 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
 
     if (lastCursor === '') {
       this.dbx.filesListFolderGetLatestCursor(
-        this.getDefaultConfig()
+        this.getDefaultParams()
       ).then((response) => {
         this.handleCursor(response)
         return this.settings.getSettings('lastCursor')
@@ -192,7 +196,7 @@ module.exports = class ServerFileListWorker extends FileListWorkerBase {
    * @since 1.0.0
    * @returns {{path: mixed|MediaTrackSettings|*, recursive: boolean, include_media_info: boolean, include_mounted_folders: boolean}}
    */
-  getDefaultConfig() {
+  getDefaultParams () {
     return {
       path: this.path,
       recursive: true,

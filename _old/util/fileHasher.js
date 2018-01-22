@@ -73,7 +73,7 @@ module.exports = class FileHasher {
 
     return new Promise((resolve, reject) => {
       this.stream.on('data', (buffer) => {
-                // console.log(`Receiving ${buffer.length} bytes of data.`)
+        // console.log(`Receiving ${buffer.length} bytes of data.`)
         this.update(buffer)
       })
       this.stream.on('end', (err) => {
@@ -112,10 +112,10 @@ module.exports = class FileHasher {
 
       let spaceInBlock = BLOCK_SIZE - this._pointer
       let inputPartEnd = Math.min(this.data.length, offset + spaceInBlock)
-      // let inputPartLength = inputPartEnd - offset
+      let inputPartLength = inputPartEnd - offset
       this._blockHasher.update(data.slice(offset, inputPartEnd))
 
-      this._pointer += inputPartEnd
+      this._pointer += inputPartLength
       offset = inputPartEnd
     }
   }

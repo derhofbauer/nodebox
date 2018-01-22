@@ -77,6 +77,7 @@ let go = function run () {
     /**
      * start downloadWorker
      * + download files from list created by mergeWorker
+     * + store revision of downloaded file to local index for later usage
      */
 
     console.info('Nodebox up and runnig :D')
