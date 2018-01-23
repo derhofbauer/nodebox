@@ -1,5 +1,7 @@
 'use strict'
 
-module.exports = class EventEmitter {
+const EventEmitter = require('events')
+
+module.exports = class NodeboxEventEmitter extends EventEmitter {
 
 }
