@@ -4,6 +4,8 @@
 const Nodebox = require('./Class/Controllers/Nodebox')
 const CloudStorageProvider = require('./Class/Interfaces/Storage/Provider/DropboxStorageInterfaceProvider')
 
+console.info('Starting Nodebox! ...')
+
 const nodebox = new Nodebox(CloudStorageProvider)
 
 // GO! :D

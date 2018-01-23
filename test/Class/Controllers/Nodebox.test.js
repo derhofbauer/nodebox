@@ -12,8 +12,6 @@ describe('Nodebox', function () {
     it('should have a few properties', function (done) {
       expect(nodebox).to.have.property('CloudStorageInterface')
       expect(nodebox).to.have.property('FilesystemStorageInterface')
-      expect(nodebox).to.have.property('StorageWorker')
-      expect(nodebox).to.have.property('StorageWatcher')
       expect(nodebox).to.have.property('MessageQueue')
       expect(nodebox).to.have.property('UploadWorker')
       expect(nodebox).to.have.property('DownloadWorker')

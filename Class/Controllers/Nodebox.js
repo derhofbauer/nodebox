@@ -25,7 +25,6 @@ module.exports = class Nodebox {
 
   constructor (Provider = DefaultCloudStorageProvider) {
     this.CloudStorageInterface = new CloudStorageInterface(Provider)
-    this.FilesystemStorageInterface = new FilesystemStorageInterface()
     this.StorageWatcher = new StorageWatcher()
     this.MessageQueue = new MessageQueue()
     this.UploadWorker = new UploadWorker()
@@ -66,11 +65,13 @@ module.exports = class Nodebox {
   }
 
   startIndexers () {
-    this.CloudStorageWorker = new StorageWorker(this.CloudStorageInterface)
-    this.LocalStorageWorker = new StorageWorker(this.FilesystemStorageInterface)
+    this.LocalStorageWorker = new StorageWorker(
+      new FilesystemStorageInterface(this.ConfigInterface.get('storagePath'))
+    )
+    // this.CloudStorageWorker = new StorageWorker(this.CloudStorageInterface)
 
-    this.CloudStorageWorker.go()
     this.LocalStorageWorker.go()
+    // this.CloudStorageWorker.go()
   }
 
   promptPromise (description) {

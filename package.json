@@ -42,6 +42,6 @@
     "standard": "standard **.js ./**/*.js",
     "jsdoc": "jsdoc **.js ./**/*.js -r",
     "lint": "yarn run eslint && yarn run standard",
-    "test": "mocha ./test/**/*.js ./test/**.js"
+    "test": "mocha --recursive"
   }
 }
