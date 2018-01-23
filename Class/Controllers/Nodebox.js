@@ -41,27 +41,36 @@ module.exports = class Nodebox {
   go () {
     console.log('Go! :D')
 
-    this.setup()
-    this.startIndexers()
+    Promise.all(this.setup()).then(() => {
+      this.startIndexers()
+    })
   }
 
   setup () {
     fs.mkdirIfNotExists(this.ConfigInterface.get('storagePath'))
 
+    let promiseStack = []
+
     if (this.ConfigInterface.get('accessToken') === null) {
-      this.promptPromise('Please enter a valid API V2 access token').then((accessToken) => {
-        this.ConfigInterface.set('accessToken', accessToken)
-      }).catch((err) => {
-        console.log(err)
-      })
+      promiseStack.push(
+        this.promptPromise('Please enter a valid API V2 access token').then((accessToken) => {
+          this.ConfigInterface.set('accessToken', accessToken)
+        }).catch((err) => {
+          console.log(err)
+        })
+      )
     }
     if (this.ConfigInterface.get('path') === null) {
-      this.promptPromise('Please enter a valid path within your dropbox').then((path) => {
-        this.ConfigInterface.set('path', path)
-      }).catch((err) => {
-        console.log(err)
-      })
+      promiseStack.push(
+        this.promptPromise('Please enter a valid path within your dropbox').then((path) => {
+          this.ConfigInterface.set('path', path)
+        }).catch((err) => {
+          console.log(err)
+        })
+      )
     }
+
+    return promiseStack
   }
 
   startIndexers () {
