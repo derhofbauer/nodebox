@@ -1,6 +1,7 @@
 'use strict'
 
 const MessageQueue = require('../../Queues/MessageQueue')
+const LogHandler = require('../../Handlers/Log/LogHandler')
 const chokidar = require('chokidar')
 
 module.exports = class StorageWatcher {
@@ -20,7 +21,7 @@ module.exports = class StorageWatcher {
     })
 
     this._watcher.on('all', (eventName, path) => {
-      console.info(`Event ${eventName} was emitted: ${path}`)
+      LogHandler.debug(`Event ${eventName} was emitted: ${path}`)
     })
     Array.from(['add', 'change', 'addDir', 'unlink', 'unlinkDir']).forEach((event) => {
       this._watcher.on(event, (path) => {
@@ -32,6 +33,7 @@ module.exports = class StorageWatcher {
     })
 
     this._watcher.on('error', (err) => {
+      LogHandler.error(err)
       throw new Error(err)
     })
 

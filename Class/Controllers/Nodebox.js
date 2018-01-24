@@ -34,12 +34,11 @@ module.exports = class Nodebox {
       path: '/.dotfiles/testfolder'
     })
     this.ErrorHandler = new ErrorHandler()
-    this.LogHandler = new LogHandler()
     this.EventEmitter = new EventEmitter()
   }
 
   go () {
-    console.log('Go! :D')
+    LogHandler.log('Go! :D')
 
     Promise.all(this.setup()).then(() => {
       this.startIndexers()
@@ -56,7 +55,7 @@ module.exports = class Nodebox {
         this.promptPromise('Please enter a valid API V2 access token').then((accessToken) => {
           this.ConfigInterface.set('accessToken', accessToken)
         }).catch((err) => {
-          console.log(err)
+          LogHander.error(err)
         })
       )
     }
@@ -65,7 +64,7 @@ module.exports = class Nodebox {
         this.promptPromise('Please enter a valid path within your dropbox').then((path) => {
           this.ConfigInterface.set('path', path)
         }).catch((err) => {
-          console.log(err)
+          LogHander.error(err)
         })
       )
     }
@@ -75,7 +74,8 @@ module.exports = class Nodebox {
 
   startIndexers () {
     this.LocalStorageWorker = new StorageWorker(
-      new FilesystemStorageInterface(this.ConfigInterface.get('storagePath'))
+      new FilesystemStorageInterface(this.ConfigInterface.get('storagePath')),
+      this.DatabaseInterface
     )
     // this.CloudStorageWorker = new StorageWorker(this.CloudStorageInterface)
 

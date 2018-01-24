@@ -23,10 +23,23 @@ module.exports = class DatabaseInterfaceBase {
    * Get a value from the database by name
    * @since 1.0.0
    * @param {string} name Name of the value to get from the database
-   * @returns{mixed} Value of `name`
+   * @return {mixed} Value of `name`
    */
-  get (name) {
-    return this._db.get(`${this.baseKey}.${name}`).value()
+  getValue (name) {
+    return this.get(name).value()
+  }
+
+  /**
+   * Get LowDB result object for later usage
+   * @since 1.0.0
+   * @param {string} name Name of the value to get from the database
+   * @return {mixed} LowDB result object
+   */
+  get (name = '') {
+    if (name === '') {
+      return this._db.get(`${this.baseKey}`)
+    }
+    return this._db.get(`${this.baseKey}.${name}`)
   }
 
   /**

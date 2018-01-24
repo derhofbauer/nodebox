@@ -16,7 +16,8 @@
     "os": "^0.1.1",
     "path": "^0.12.7",
     "path-exists": "^3.0.0",
-    "prompt": "^1.0.0"
+    "prompt": "^1.0.0",
+    "winston-color": "^1.0.0"
   },
   "devDependencies": {
     "chai": "^4.1.2",

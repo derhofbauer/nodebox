@@ -5,14 +5,17 @@ const POSITIVE_EVENTS = Array.from(['add', 'change', 'addDir'])
 const NEGATIVE_EVENTS = Array.from(['unlink', 'unlinkDir'])
 
 const FileHasher = require('../../Utility/FileHasher')
+const LogHandler = require('../../Handlers/Log/LogHandler')
 
 const fs = require('../../../Overrides/fs')
 const path = require('../../../Overrides/path')
 
 module.exports = class StorageWorker {
-  constructor (StorageInterface) {
+  constructor (StorageInterface, DatabaseInterface) {
     this.StorageInterface = StorageInterface
     this.StorageWatcher = new StorageWatcher(this.StorageInterface)
+
+    this.DatabaseInterface = DatabaseInterface
   }
 
   go () {
@@ -56,16 +59,15 @@ module.exports = class StorageWorker {
             })
         }
       }).catch((err) => {
-        console.log(err)
+        LogHandler.error(err)
         reject(err)
       })
     })
-    console.log(path)
   }
 
   handleNegativeEvent (path) {
     // delete item.path
-    console.log(path)
+    LogHandler.debug(path)
   }
 
   /**
@@ -82,10 +84,13 @@ module.exports = class StorageWorker {
       new FileHasher(absolutePath).then((hash) => {
         let relativePath = this.getRelativePathFromAbsolute(absolutePath)
         let file = this.prepareFile(relativePath, stats, hash)
-        // @todo: handle file here! Update or add it to DB!
-        resolve(file)
+
+        this.DatabaseInterface.addOrUpdatePath(file).then((file) => {
+          resolve(file)
+        })
+
       }).catch((err) => {
-        console.log(err)
+        LogHandler.error(err)
         reject(err)
       })
     })
@@ -101,9 +106,10 @@ module.exports = class StorageWorker {
     return new Promise((resolve) => {
       let relativePath = this.getRelativePathFromAbsolute(absolutePath)
       let directory = this.prepareDirectory(relativePath)
-      console.debug('Directory:', directory)
-      // @todo: handle directory here! Update or add it to DB!
-      resolve(directory)
+
+      this.DatabaseInterface.addOrUpdatePath(directory).then((directory) => {
+        resolve(directory)
+      })
     })
   }
 

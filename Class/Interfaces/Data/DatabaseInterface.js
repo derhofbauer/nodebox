@@ -6,6 +6,7 @@ const lowdb = require('lowdb')
 const FileSync = require('lowdb/adapters/FileSync')
 
 const DatabaseInterfaceBase = require('../DatabaseInterfaceBase')
+const LogHandler = require('../../Handlers/Log/LogHandler')
 
 module.exports = class DatabaseInterface extends DatabaseInterfaceBase {
   constructor (databasePath = '~/.config/nodebox/db.json') {
@@ -17,12 +18,24 @@ module.exports = class DatabaseInterface extends DatabaseInterfaceBase {
     this._db.read()
 
     // `index` will be a object with keys `local` und `cloud/server/whatever`
-    //   hold both entries for each path, which will probably make it easier tó
+    //   hold both entries for each path, which will probably make it easier to
     //   calculate actions.
     this._db.defaults({
       index: []
     }).write()
 
     this.persist()
+  }
+
+  addOrUpdatePath (fileJson) {
+    return new Promise((resolve) => {
+      let existingFile = this.get().find({path_lower: fileJson.path_lower})
+
+      if (existingFile.value() !== undefined) {
+        resolve(existingFile.assign(fileJson).write())
+      } else {
+        resolve(this.get().push(fileJson).write())
+      }
+    })
   }
 }

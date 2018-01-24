@@ -65,7 +65,7 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
               resolve(this.getFileList())
             })
         }).catch((err) => {
-          console.log(err)
+          LogHander.error(err)
           reject(err)
         })
       }
@@ -88,7 +88,7 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
       this._watcherReady = true
 
       this._watcher.on('all', (eventName, path) => {
-        console.log(`Event ${eventName} was emitted on ${path}.`)
+        LogHander.silly(`Event ${eventName} was emitted on ${path}.`)
       })
       Array.from(['add', 'change', 'addDir']).forEach((event) => {
         this._watcher.on(event, (path) => {
@@ -244,7 +244,7 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
         .then(() => {
           resolve()
         }).catch((err) => {
-          console.log(err)
+          LogHander.error(err)
           reject(err)
       })
 
@@ -369,7 +369,7 @@ module.exports = class LocalFileListWorker extends FileListWorkerBase {
         this.filelist.push(file)
         resolve(file)
       }).catch((err) => {
-        console.log(err)
+        LogHander.error(err)
         reject(err)
       })
     })

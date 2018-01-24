@@ -3,6 +3,8 @@
 const crypto = require('crypto')
 const fs = require('fs')
 
+const LogHandler = require('../Handlers/Log/LogHandler')
+
 /**
  * Block size of Dropbox hash chunks
  * @const
@@ -69,23 +71,23 @@ module.exports = class FileHasher {
      */
     this.hexDigest = ''
 
-    console.debug('Path:', this.path)
+    LogHandler.debug('Path:', this.path)
 
     return new Promise((resolve, reject) => {
       this.stream.on('data', (buffer) => {
-        // console.log(`Receiving ${buffer.length} bytes of data.`)
+        // LogHandler.log(`Receiving ${buffer.length} bytes of data.`)
         this.update(buffer)
       })
       this.stream.on('end', (err) => {
         if (err) {
-          console.log(err)
+          LogHandler.error(err)
         }
         this.hexDigest = this.digest('hex')
-                // console.log('hexDigest:', this.hexDigest)
+                // LogHandler.log('hexDigest:', this.hexDigest)
         resolve(this.hexDigest)
       })
       this.stream.on('error', (err) => {
-        console.log('Error reading from file: ', err)
+        LogHandler.error('Error reading from file: ', err)
         reject(err)
       })
     })

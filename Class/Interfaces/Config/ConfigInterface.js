@@ -39,4 +39,8 @@ module.exports = class ConfigInterface extends DatabaseInterfaceBase {
 
     this.persist()
   }
+
+  get (name) {
+    return this._db.get(`${this.baseKey}.${name}`).value()
+  }
 }
