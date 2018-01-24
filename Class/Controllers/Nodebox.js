@@ -68,7 +68,7 @@ module.exports = class Nodebox {
         this.promptPromise('Please enter a valid API V2 access token').then((accessToken) => {
           this.ConfigInterface.set('accessToken', accessToken)
         }).catch((err) => {
-          LogHander.error(err)
+          LogHandler.error(err)
         })
       )
     }
@@ -77,7 +77,7 @@ module.exports = class Nodebox {
         this.promptPromise('Please enter a valid path within your dropbox').then((path) => {
           this.ConfigInterface.set('path', path)
         }).catch((err) => {
-          LogHander.error(err)
+          LogHandler.error(err)
         })
       )
     }

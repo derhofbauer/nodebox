@@ -40,7 +40,7 @@
     "init": "yarn",
     "nodemon": "nodemon index.js",
     "eslint": "eslint **.js ./**/*.js",
-    "standard": "standard **.js ./**/*.js",
+    "standard": "standard Class/**.js Class/**/*.js Overrides/**.js Overrides/**/*.js",
     "jsdoc": "jsdoc **.js ./**/*.js -r",
     "lint": "yarn run eslint && yarn run standard",
     "test": "mocha --recursive"

@@ -21,14 +21,12 @@ const BLOCK_SIZE = 4 * 1024 * 1024 // 4MB
  * @since 1.0.0
  */
 module.exports = class FileHasher {
-
   /**
    * Hash file found at `absolutePath`
    * @param {string} absolutePath Filepath to be hashed
    * @return {Promise} Promise resolving to `absolutePath` hash
    */
   constructor (absolutePath) {
-
     /**
      * Hasher for sum of chunk hashes
      * @member {Hash}
@@ -154,13 +152,13 @@ module.exports = class FileHasher {
    * @throws {Error} Will throw an error if wrong encoding was given.
    */
   checkInputEncoding (encoding) {
-      if (encoding !== undefined &&
+    if (encoding !== undefined &&
           encoding !== 'utf8' &&
           encoding !== 'ascii' &&
           encoding !== 'latin1'
       ) {
-          throw new Error('Invalid \'input encoding\': ' + JSON.stringify(encoding))
-      }
+      throw new Error('Invalid \'input encoding\': ' + JSON.stringify(encoding))
+    }
   }
 
   /**
@@ -169,11 +167,11 @@ module.exports = class FileHasher {
    * @param {string} encoding Stream encoding to use for reading the file
    */
   prepareBuffer (data, encoding) {
-      this.data = data
-      if (!Buffer.isBuffer(data)) {
-          this.checkInputEncoding(encoding)
+    this.data = data
+    if (!Buffer.isBuffer(data)) {
+      this.checkInputEncoding(encoding)
 
-          this.data = Buffer.from(data, encoding)
-      }
+      this.data = Buffer.from(data, encoding)
+    }
   }
 }
