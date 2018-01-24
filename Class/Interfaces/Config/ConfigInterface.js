@@ -10,6 +10,11 @@ const _ = require('lodash')
 const DatabaseInterfaceBase = require('../DatabaseInterfaceBase')
 
 module.exports = class ConfigInterface extends DatabaseInterfaceBase {
+  /**
+   * Constructor
+   * @since 1.0.0
+   * @param {object} customSettings Settings object; will be merge with current
+   */
   constructor (customSettings) {
     super('settings')
 
@@ -40,6 +45,12 @@ module.exports = class ConfigInterface extends DatabaseInterfaceBase {
     this.persist()
   }
 
+  /**
+   * Returns single config value
+   * @since 1.0.0
+   * @param {string} name Name of config directive
+   * @return {mixed} Value of `name`
+   */
   get (name) {
     return this._db.get(`${this.baseKey}.${name}`).value()
   }

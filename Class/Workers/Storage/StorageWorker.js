@@ -11,6 +11,12 @@ const fs = require('../../../Overrides/fs')
 const path = require('../../../Overrides/path')
 
 module.exports = class StorageWorker {
+  /**
+   * Constructor
+   * @since 1.0.0
+   * @param {StorageInterface} StorageInterface
+   * @param {DatabaseInterface} DatabaseInterface
+   */
   constructor (StorageInterface, DatabaseInterface) {
     this.StorageInterface = StorageInterface
     this.StorageWatcher = new StorageWatcher(this.StorageInterface)
@@ -18,6 +24,9 @@ module.exports = class StorageWorker {
     this.DatabaseInterface = DatabaseInterface
   }
 
+  /**
+   * Starts the whole dang thing ;) by binding event handlers
+   */
   go () {
     this.StorageWatcher.go()
 
@@ -28,6 +37,11 @@ module.exports = class StorageWorker {
     // @todo: use propper message queue to only invoke n events at the "same" time
   }
 
+  /**
+   * Handles on single event from StorageWatcher
+   * @since 1.0.0
+   * @param {object} item Event item: `{event: '…', path: '…')`
+   */
   eventHandler (item) {
     if (POSITIVE_EVENTS.indexOf(item.event) > -1) {
       this.handlePositiveEvent(item.path)
@@ -37,6 +51,12 @@ module.exports = class StorageWorker {
     }
   }
 
+  /**
+   * Handles on single positive event
+   * @since 1.0.0
+   * @param {string} path Path to handle, might by file or folder path
+   * @returns {Promise<object>} Resolves to file or folder object, reject to err
+   */
   handlePositiveEvent (path) {
     // (re-)index item.path
     return new Promise((resolve, reject) => {
@@ -46,15 +66,17 @@ module.exports = class StorageWorker {
             .then((file) => {
               resolve(file)
             }).catch((err) => {
+              LogHandler.error(err)
               reject(err)
           })
         }
 
         if (stats.isDirectory()) {
           this.handlePositiveDirectory(path, stats)
-            .then((file) => {
-              resolve(file)
+            .then((directory) => {
+              resolve(directory)
             }).catch((err) => {
+              LogHandler.error(err)
               reject(err)
             })
         }
@@ -65,6 +87,12 @@ module.exports = class StorageWorker {
     })
   }
 
+  /**
+   * Handles on single negative event
+   * @since 1.0.0
+   * @param {string} path Path to handle, might by file or folder path
+   * @returns {Promise<object>} Resolves to file or folder object, reject to err
+   */
   handleNegativeEvent (path) {
     // delete item.path
     LogHandler.debug(path)
@@ -85,7 +113,7 @@ module.exports = class StorageWorker {
         let relativePath = this.getRelativePathFromAbsolute(absolutePath)
         let file = this.prepareFile(relativePath, stats, hash)
 
-        this.DatabaseInterface.addOrUpdatePath(file).then((file) => {
+        this.DatabaseInterface.addOrUpdateByPath(file).then((file) => {
           resolve(file)
         })
 
@@ -107,7 +135,7 @@ module.exports = class StorageWorker {
       let relativePath = this.getRelativePathFromAbsolute(absolutePath)
       let directory = this.prepareDirectory(relativePath)
 
-      this.DatabaseInterface.addOrUpdatePath(directory).then((directory) => {
+      this.DatabaseInterface.addOrUpdateByPath(directory).then((directory) => {
         resolve(directory)
       })
     })

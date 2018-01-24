@@ -9,6 +9,11 @@ const DatabaseInterfaceBase = require('../DatabaseInterfaceBase')
 const LogHandler = require('../../Handlers/Log/LogHandler')
 
 module.exports = class DatabaseInterface extends DatabaseInterfaceBase {
+  /**
+   * Constructor
+   * @since 1.0.0
+   * @param {string} databasePath Path to database file
+   */
   constructor (databasePath = '~/.config/nodebox/db.json') {
     super('index')
 
@@ -27,14 +32,20 @@ module.exports = class DatabaseInterface extends DatabaseInterfaceBase {
     this.persist()
   }
 
-  addOrUpdatePath (fileJson) {
+  /**
+   * Add or update path database entry
+   * @since 1.0.0
+   * @param {object} path Path object containg paths, stats and hash
+   * @returns {Promise<object>} New entry stored in database
+   */
+  addOrUpdateByPath (file) {
     return new Promise((resolve) => {
-      let existingFile = this.get().find({path_lower: fileJson.path_lower})
+      let existingFile = this.get().find({path_lower: file.path_lower})
 
       if (existingFile.value() !== undefined) {
-        resolve(existingFile.assign(fileJson).write())
+        resolve(existingFile.assign(file).write())
       } else {
-        resolve(this.get().push(fileJson).write())
+        resolve(this.get().push(file).write())
       }
     })
   }

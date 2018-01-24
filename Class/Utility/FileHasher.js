@@ -71,7 +71,7 @@ module.exports = class FileHasher {
      */
     this.hexDigest = ''
 
-    LogHandler.debug('Path:', this.path)
+    LogHandler.debug('Hashing', this.path)
 
     return new Promise((resolve, reject) => {
       this.stream.on('data', (buffer) => {
