@@ -33,10 +33,10 @@ module.exports = class Nodebox {
     this.MessageQueue = new MessageQueue()
     this.UploadWorker = new UploadWorker()
     this.DownloadWorker = new DownloadWorker()
-    this.DatabaseInterface = new DatabaseInterface()
     this.ConfigInterface = new ConfigInterface({
       path: '/.dotfiles/testfolder'
     })
+    this.DatabaseInterface = new DatabaseInterface()
     this.ErrorHandler = new ErrorHandler()
     this.EventEmitter = new EventEmitter()
   }

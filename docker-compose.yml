@@ -16,6 +16,8 @@ services:
 
   db:
     image: redis:alpine
+    ports:
+    - "6379"
 
 volumes:
   data-volume:
