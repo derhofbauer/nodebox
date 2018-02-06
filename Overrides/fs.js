@@ -19,8 +19,8 @@ const pathExists = require('path-exists')
  */
 fs.mkdirIfNotExists = (dir) => {
   return new Promise((resolve, reject) => {
-    fs.exists(dir).then((exists) => {
-      if (exists === false) {
+    fs.access(dir, fs.constants.F_OK, (err) => {
+      if (err) {
         fs.mkdir(dir, (err) => {
           if (err) {
             reject(err)
@@ -28,6 +28,7 @@ fs.mkdirIfNotExists = (dir) => {
           resolve()
         })
       }
+      resolve()
     })
   })
 }
