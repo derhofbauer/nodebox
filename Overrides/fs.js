@@ -19,16 +19,12 @@ const pathExists = require('path-exists')
  */
 fs.mkdirIfNotExists = (dir) => {
   return new Promise((resolve, reject) => {
-    fs.access(dir, fs.constants.F_OK, (err) => {
-      if (err) {
-        fs.mkdir(dir, (err) => {
-          if (err) {
-            reject(err)
-          }
-          resolve()
-        })
+    fs.mkdir(dir, (err) => {
+      if (err.code !== 'EEXIST') {
+        reject(err)
+      } else {
+        resolve()
       }
-      resolve()
     })
   })
 }
