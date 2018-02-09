@@ -11,13 +11,13 @@ services:
     environment:
       NODE_ENV: 'development'
       LOG_LEVEL: 'debug'
-    links:
-      - db
-
-  db:
-    image: redis:alpine
-    ports:
-    - "6379"
+#    links:
+#      - db
+#
+#  db:
+#    image: redis:alpine
+#    ports:
+#    - "6379"
 
 volumes:
   data-volume:
