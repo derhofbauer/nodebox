@@ -9,6 +9,8 @@ const LogHandler = require('../../Handlers/Log/LogHandler')
 
 const fs = require('../../../Overrides/fs')
 const path = require('../../../Overrides/path')
+const async = require('async')
+const PARALLEL_LIMIT = process.env.PARALLEL_LIMIT || 2
 
 module.exports = class StorageWorker {
   /**
@@ -18,6 +20,7 @@ module.exports = class StorageWorker {
    * @param {DatabaseInterface} DatabaseInterface
    */
   constructor (StorageInterface, DatabaseInterface) {
+    LogHandler.debug(`PARALLEL_LIMIT: ${PARALLEL_LIMIT}`)
     this.StorageInterface = StorageInterface
     this.StorageWatcher = new StorageWatcher(this.StorageInterface)
 
@@ -30,11 +33,17 @@ module.exports = class StorageWorker {
   go () {
     this.StorageWatcher.go()
 
-    this.StorageWatcher.MessageQueue.on('new', (item) => {
+    this.q = async.queue(async (item) => {
       this.eventHandler(item)
+    }, PARALLEL_LIMIT)
+
+    this.q.drain = () => {
+      LogHandler.debug('StorageWorker Work Queue: all items have been processed')
+    }
+
+    this.StorageWatcher.MessageQueue.on('new', (item) => {
+      this.q.push(item)
     })
-    // @todo: use async package to handle indexing of files
-    // @todo: use propper message queue to only invoke n events at the "same" time
   }
 
   /**
@@ -72,7 +81,7 @@ module.exports = class StorageWorker {
         }
 
         if (stats.isDirectory()) {
-          this.handlePositiveDirectory(path, stats)
+          this.handlePositiveDirectory(path)
             .then((directory) => {
               resolve(directory)
             }).catch((err) => {
@@ -90,12 +99,21 @@ module.exports = class StorageWorker {
   /**
    * Handles on single negative event
    * @since 1.0.0
-   * @param {string} path Path to handle, might by file or folder path
-   * @returns {Promise<object>} Resolves to file or folder object, reject to err
+   * @param {string} absolutePath Path to handle, might by file or folder path
+   * @returns {Promise} Resolves on success, rejects on failure
    */
-  handleNegativeEvent (path) {
-    // delete item.path
-    LogHandler.debug(path)
+  handleNegativeEvent (absolutePath) {
+    // delete item.path from db
+    return new Promise((resolve, reject) => {
+      let relativePath = this.getRelativePathFromAbsolute(absolutePath)
+
+      this.DatabaseInterface.removeByPath(relativePath).then(() => {
+        resolve()
+      }).catch((err) => {
+        LogHandler.error(err)
+        reject(err)
+      })
+    })
   }
 
   /**

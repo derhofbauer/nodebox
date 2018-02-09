@@ -49,4 +49,17 @@ module.exports = class DatabaseInterface extends DatabaseInterfaceBase {
       }
     })
   }
+
+  /**
+   * Remove path database entry
+   * @since 1.0.0
+   * @param {string} file Path to be deleted from db
+   * @returns {Promise>} Always resolves
+   */
+  removeByPath (file) {
+    return new Promise((resolve) => {
+      this.get().remove({path_lower: file}).write()
+      resolve()
+    })
+  }
 }

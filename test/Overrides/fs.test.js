@@ -10,10 +10,10 @@ const fs = require('../../Overrides/fs')
 
 // test
 describe('Overrides#fs', function () {
-  describe('exists', function () {
+  describe('pathExists', function () {
     it('should check path asynchronously', function (done) {
-      expect(fs.exists('/bin/pwd')).to.eventually.equal(true)
-      expect(fs.exists('/hurz/foobar')).to.eventually.equal(false)
+      expect(fs.pathExists('/bin/pwd')).to.eventually.equal(true)
+      expect(fs.pathExists('/hurz/foobar')).to.eventually.equal(false)
       done()
     })
   })

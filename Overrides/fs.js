@@ -79,9 +79,9 @@ fs.statPromise = (p) => {
  *
  * @since 1.0.0
  * @param {string} path Path to test
- * @returns {Promise<any>} Always resolves, true if exists, false if not
+ * @returns {Promise<any>} Always resolves, true if pathExists, false if not
  */
-fs.exists = (path) => {
+fs.pathExists = (path) => {
   return new Promise((resolve, reject) => {
     pathExists(path).then((exists) => {
       resolve(exists)
