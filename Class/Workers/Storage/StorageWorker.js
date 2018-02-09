@@ -161,17 +161,25 @@ module.exports = class StorageWorker {
    */
   handlePositiveFile (absolutePath, stats) {
     return new Promise((resolve, reject) => {
-      new FileHasher(absolutePath).then((hash) => {
-        let relativePath = this.getRelativePathFromAbsolute(absolutePath)
-        let file = this.prepareFile(relativePath, stats, hash)
+      let relativePath = this.getRelativePathFromAbsolute(absolutePath)
 
-        this.DatabaseInterface.addOrUpdateByPath(file).then((file) => {
-          resolve(file)
-        })
+      this.DatabaseInterface.getByPath(relativePath).then((file) => {
+        if (file === undefined  || file.size !== stats.size || file.client_modified !== stats.mtime.toISOString()) {
+          LogHandler.verbose(`${relativePath} will be (re-)hashed`)
+          new FileHasher(absolutePath).then((hash) => {
+            let file = this.prepareFile(relativePath, stats, hash)
 
-      }).catch((err) => {
-        LogHandler.error(err)
-        reject(err)
+            this.DatabaseInterface.addOrUpdateByPath(file).then((file) => {
+              resolve(file)
+            })
+
+          }).catch((err) => {
+            LogHandler.error(err)
+            reject(err)
+          })
+        } else {
+          LogHandler.verbose(`${relativePath} will not be hashed`)
+        }
       })
     })
   }

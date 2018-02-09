@@ -59,4 +59,16 @@ module.exports = class DatabaseInterface extends DatabaseInterfaceBase {
       resolve()
     })
   }
+
+  /**
+   * Returns file entries by path from database
+   * @param {string} file Path to be retreived from database
+   * @returns {Promise<Object|undefined>} Always resolves to lowdb result value
+   *   (Object|undefined)
+   */
+  getByPath (file) {
+    return new Promise((resolve) => {
+      resolve(this.get().find({path_lower: file}).value())
+    })
+  }
 }
