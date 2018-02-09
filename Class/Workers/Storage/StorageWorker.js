@@ -7,6 +7,7 @@ const NEGATIVE_EVENTS = Array.from(['unlink', 'unlinkDir'])
 const FileHasher = require('../../Utility/FileHasher')
 const LogHandler = require('../../Handlers/Log/LogHandler')
 
+const _ = require('lodash')
 const fs = require('../../../Overrides/fs')
 const path = require('../../../Overrides/path')
 const async = require('async')
@@ -43,6 +44,39 @@ module.exports = class StorageWorker {
 
     this.StorageWatcher.MessageQueue.on('new', (item) => {
       this.q.push(item)
+    })
+
+    this.removeOldEntries()
+  }
+
+  /**
+   * Remove file entries to files, that do not exist on disk anymore
+   *   This method mocks a filesystem event and makes use of the default
+   *   mechanisms for deleting files. It just adds the file path to the async
+   *   queue and the StorageWorker routines handle the "event".
+   * @since 1.0.0
+   */
+  removeOldEntries () {
+    let index = this.DatabaseInterface.get().value()
+    this.StorageInterface.dir().then((files) => {
+      _.forEach(index, (value) => {
+        if (files.indexOf(value.path_lower) === -1) {
+          LogHandler.silly(
+            'File does not exist any more and is deleted:',
+            files.indexOf(value.path_lower), value.path_lower
+          )
+
+          /**
+           * Handle the file using the normal routines.
+           *   We add an event to the Message Queue here and therefore make use
+           *   of the async package again and remove the entry from the db.
+           */
+          this.StorageWatcher.MessageQueue.push({
+            event: 'unlink',
+            path: value.path_lower
+          })
+        }
+      })
     })
   }
 

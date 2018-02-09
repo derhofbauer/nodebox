@@ -22,9 +22,6 @@ module.exports = class DatabaseInterface extends DatabaseInterfaceBase {
     this._db = lowdb(new FileSync(this.databasePath))
     this._db.read()
 
-    // `index` will be a object with keys `local` und `cloud/server/whatever`
-    //   hold both entries for each path, which will probably make it easier to
-    //   calculate actions.
     this._db.defaults({
       index: []
     }).write()

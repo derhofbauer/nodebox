@@ -19,6 +19,7 @@ module.exports = class StorageWatcher {
   constructor (StorageInterface) {
     this.StorageInterface = StorageInterface
     this.MessageQueue = new MessageQueue()
+    this.initialFileList = []
   }
 
   /**
@@ -56,6 +57,8 @@ module.exports = class StorageWatcher {
       LogHandler.error(err)
       throw new Error(err)
     })
+
+    this.initialScan = false
 
     return this._watcher
   }
