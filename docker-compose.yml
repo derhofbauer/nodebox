@@ -11,6 +11,8 @@ services:
     environment:
       NODE_ENV: 'development'
       LOG_LEVEL: 'debug'
+    ports:
+      - 9229:9229
 #    links:
 #      - db
 #

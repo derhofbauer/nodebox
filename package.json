@@ -42,11 +42,12 @@
     "init": "yarn",
     "nodemon": "nodemon index.js",
     "start": "node index.js",
+    "inspect": "node --inspect index.js",
     "eslint": "eslint **.js ./**/*.js",
     "standard": "standard Class/**.js Class/**/*.js Overrides/**.js Overrides/**/*.js",
     "jsdoc": "jsdoc **.js ./**/*.js -r",
     "lint": "yarn run eslint && yarn run standard",
-    "test": "mocha --recursive",
+    "test": "mocha --recursive --exit",
     "attach": "docker exec -it nodebox_node_1 bash"
   }
 }
