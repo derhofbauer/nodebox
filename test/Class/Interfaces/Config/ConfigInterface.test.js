@@ -16,4 +16,19 @@ describe('ConfigInterface', function () {
     expect(configInterface.get('path')).to.equal('/.dotfiles/testfolder')
     done()
   })
+
+  describe('get', function () {
+    it('should return one single settings value', function (done) {
+      expect(configInterface.get('path')).to.equal('/.dotfiles/testfolder')
+      done()
+    })
+  })
+
+  describe('set', function () {
+    it('should set one single settings value', function (done) {
+      configInterface.set('hurz', 'hias')
+      expect(configInterface.get('hurz')).to.equal('hias')
+      done()
+    })
+  })
 })
