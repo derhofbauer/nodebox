@@ -15,7 +15,7 @@ describe('Overrides#path', function () {
     })
   })
 
-  describe('addLeadingSlach', function () {
+  describe('addLeadingSlash', function () {
     it('should add a slash', function (done) {
       expect(path.addLeadingSlash('root/nodebox')).to.equal('/root/nodebox')
       expect(path.addLeadingSlash('/root/nodebox')).to.equal('/root/nodebox')

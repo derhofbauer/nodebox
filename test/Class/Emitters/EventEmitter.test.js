@@ -31,7 +31,7 @@ describe('EventEmitter', function () {
 
     eventEmitter.emit('testEvent', {foo: 'bar'}, cb)
     cb.should.have.been.calledWith({foo: 'bar'})
-    
+
     done()
   })
 })
