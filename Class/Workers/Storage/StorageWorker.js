@@ -42,8 +42,8 @@ module.exports = class StorageWorker {
       LogHandler.debug('StorageWorker Work Queue: all items have been processed')
     }
 
-    this.StorageWatcher.MessageQueue.on('new', (item) => {
-      this.q.push(item)
+    this.StorageWatcher.MessageQueue.on('new', () => {
+      this.q.push(this.StorageWatcher.MessageQueue.first())
     })
 
     this.removeOldEntries()
