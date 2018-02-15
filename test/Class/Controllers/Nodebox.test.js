@@ -1,6 +1,6 @@
 // dependencies
 const chai = require('chai')
-const expect = chai.expect;
+const expect = chai.expect
 
 // subject of this test
 const Nodebox = require('../../../Class/Controllers/Nodebox')
