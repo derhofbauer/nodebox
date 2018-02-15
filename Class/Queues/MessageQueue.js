@@ -17,4 +17,8 @@ module.exports = class MessageQueue extends EventEmitter {
   first () {
     return this._mq.shift()
   }
+
+  get () {
+    return this.first()
+  }
 }
