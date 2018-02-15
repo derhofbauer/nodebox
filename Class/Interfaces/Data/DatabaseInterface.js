@@ -32,7 +32,7 @@ module.exports = class DatabaseInterface extends DatabaseInterfaceBase {
   /**
    * Add or update path database entry
    * @since 1.0.0
-   * @param {object} path Path object containg paths, stats and hash
+   * @param {object} path Path object containing paths, stats and hash
    * @returns {Promise<object>} New entry stored in database
    */
   addOrUpdateByPath (file) {

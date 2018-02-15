@@ -5,6 +5,8 @@ const fs = require('../../../Overrides/fs')
 const path = require('../../../Overrides/path')
 const _ = require('lodash')
 
+const LogHandler = require('../../Handlers/Log/LogHandler')
+
 module.exports = class FilesystemStorageInterface extends StorageInterfaceBase {
   constructor (storagePath = '~/nodebox') {
     super()
