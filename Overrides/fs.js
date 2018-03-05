@@ -8,7 +8,6 @@
 
 const fs = require('fs')
 const dir = require('node-dir')
-// const pathExists = require('path-exists')
 
 /**
  * Create directory if it does not exist
@@ -73,22 +72,5 @@ fs.statPromise = (p) => {
     })
   })
 }
-
-/**
- * Asynchoniously check for existence of `path`.
- *
- * @since 1.0.0
- * @param {string} path Path to test
- * @returns {Promise<any>} Always resolves, true if pathExists, false if not
- */
-/*fs.pathExists = (path) => {
-  return new Promise((resolve, reject) => {
-    pathExists(path).then((exists) => {
-      resolve(exists)
-    }).catch((error) => {
-      reject(error)
-    })
-  })
-}*/
 
 module.exports = fs

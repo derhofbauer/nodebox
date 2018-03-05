@@ -19,6 +19,9 @@ describe('Overrides#fs', function () {
     it('should create a directory', function (done) {
       expect(fs.mkdirIfNotExists('/opt/nodebox/123456789')).to.eventually.be.fulfilled.and.notify(done)
     })
+    it('should fullfill if a directory already exists', function (done) {
+      expect(fs.mkdirIfNotExists('/usr/bin')).to.eventually.be.fulfilled.and.notify(done)
+    })
   })
 
   describe('dir', function () {
@@ -36,14 +39,20 @@ describe('Overrides#fs', function () {
     it('should return the path if a file is given', function (done) {
       expect(fs.dir('/opt/nodebox/index.js')).to.eventually.equal('/opt/nodebox/index.js').and.notify(done)
     })
+    it('should reject on stat error', function (done) {
+      expect(fs.dir('/foo/bar')).to.eventually.be.rejected.an.notify(done)
+    })
   })
 
-  describe('stats', function () {
+  describe('statPromise', function () {
     it('should return fs.Stats on files', function (done) {
       expect(fs.statPromise('/opt/nodebox/index.js')).to.eventually.be.instanceof(fs.Stats).and.notify(done)
     })
     it('should return fs.Stats on directories', function (done) {
       expect(fs.statPromise('/opt/nodebox/')).to.eventually.be.instanceOf(fs.Stats).and.notify(done)
+    })
+    it('should reject on error', function (done) {
+      expect(fs.statPromise('/foo/bar')).to.eventually.be.rejected.and.notify(done)
     })
   })
 })
