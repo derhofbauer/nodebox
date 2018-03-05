@@ -28,6 +28,7 @@
     "jsdoc": "^3.5.5",
     "mocha": "^5.0.0",
     "nodemon": "^1.14.7",
+    "nyc": "^11.4.1",
     "sinon": "^4.3.0",
     "sinon-chai": "^2.14.0",
     "standard": "^10.0.3"
@@ -50,6 +51,7 @@
     "jsdoc": "jsdoc **.js ./**/*.js -r",
     "lint": "yarn run eslint && yarn run standard",
     "test": "mocha --recursive --exit",
+    "coverage": "nyc mocha --recursive --exit",
     "attach": "docker exec -it nodebox_node_1 bash"
   }
 }
