@@ -10,10 +10,14 @@ const configInterface = new ConfigInterface({
 
 // test
 describe('ConfigInterface', function () {
+  it('should take override-config', function (done) {
+    expect(configInterface.get('path')).to.equal('/.dotfiles/testfolder')
+    done()
+  })
+
   it('should have properties', function (done) {
     expect(configInterface.get('storagePath')).to.equal('/root/nodebox')
     expect(configInterface.get('databasePath')).to.equal('/root/.config/nodebox/db.json')
-    expect(configInterface.get('path')).to.equal('/.dotfiles/testfolder')
     done()
   })
 

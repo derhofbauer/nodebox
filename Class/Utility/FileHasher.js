@@ -73,7 +73,7 @@ module.exports = class FileHasher {
 
     return new Promise((resolve, reject) => {
       this.stream.on('data', (buffer) => {
-        // LogHandler.log(`Receiving ${buffer.length} bytes of data.`)
+        LogHandler.silly(`Receiving ${buffer.length} bytes of data.`)
         this.update(buffer)
       })
       this.stream.on('end', (err) => {
