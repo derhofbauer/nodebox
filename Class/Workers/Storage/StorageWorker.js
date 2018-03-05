@@ -103,7 +103,7 @@ module.exports = class StorageWorker {
   handlePositiveEvent (path) {
     // (re-)index item.path
     return new Promise((resolve, reject) => {
-      fs.statPromise(path).then((stats) => {
+      this.StorageInterface.stat(path).then((stats) => {
         if (stats.isFile()) {
           this.handlePositiveFile(path, stats)
             .then((file) => {

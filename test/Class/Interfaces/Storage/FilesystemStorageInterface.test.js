@@ -9,7 +9,15 @@ const filesystemStorageInterface = new FilesysteStorageInterface('~/.config/node
 
 // test
 describe('FilesystemStorageInterface', function () {
-  it('should return an array', function (done) {
-    filesystemStorageInterface.dir().should.eventually.be.an('array').and.notify(done)
+  describe('dir', function () {
+    it('should return an array', function (done) {
+      filesystemStorageInterface.dir().should.eventually.be.an('array').and.notify(done)
+    })
+  })
+
+  describe('stat', function () {
+    it('should return stats', function (done) {
+      filesystemStorageInterface.stat('/root').should.eventually.be.an('object').and.notify(done)
+    })
   })
 })

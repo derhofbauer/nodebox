@@ -14,6 +14,11 @@ module.exports = class FilesystemStorageInterface extends StorageInterfaceBase {
     this.storagePath = path.expandTilde(storagePath)
   }
 
+  /**
+   * Returns a file list with relative paths
+   * @param {bool} relative create relative paths or absolute
+   * @returns {Promise<Array|Object>} Resolves to Array, rejects to error
+   */
   dir (relative = true) {
     return new Promise((resolve, reject) => {
       fs.dir(this.storagePath).then((files) => {
@@ -29,5 +34,15 @@ module.exports = class FilesystemStorageInterface extends StorageInterfaceBase {
         reject(err)
       })
     })
+  }
+
+  /**
+   * Calls the fs.statPromise() Method on the given path and returns the promise
+   * @param {string} path Path to stat
+   * @returns {Promise<object>} Resolves on success with stats,
+   *   rejects with error
+   */
+  stat (path) {
+    return fs.statPromise(path)
   }
 }
