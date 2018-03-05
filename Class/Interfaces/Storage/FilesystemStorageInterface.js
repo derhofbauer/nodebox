@@ -17,7 +17,7 @@ module.exports = class FilesystemStorageInterface extends StorageInterfaceBase {
   /**
    * Returns a file list with relative paths
    * @param {bool} relative create relative paths or absolute
-   * @returns {Promise<Array|Object>} Resolves to Array, rejects to error
+   * @returns {Promise<Array|Object>} Resolves to Array, rejects to errorg
    */
   dir (relative = true) {
     return new Promise((resolve, reject) => {
