@@ -32,4 +32,21 @@ describe('DatabaseInterface', function () {
   it('should return data by given path', function (done) {
     databaseInterface.getByPath(TEST_FILE.path_lower).should.eventually.deep.equal(TEST_FILE).and.notify(done)
   })
+
+  it('should return a single value', function (done) {
+    expect(databaseInterface.getValue('foobar')).to.equal(undefined)
+    done()
+  })
+
+  it('should return the whole database', function (done) {
+    let state = databaseInterface.getState()
+    expect(state).to.be.a('Object')
+    expect(state).to.have.property('index')
+    done()
+  })
+
+  it('should return the db itself', function (done) {
+    expect(databaseInterface.getDb()).to.be.an('Object')
+    done()
+  })
 })

@@ -52,6 +52,7 @@
     "lint": "yarn run eslint && yarn run standard",
     "test": "mocha --recursive --exit",
     "coverage": "nyc mocha --recursive --exit",
+    "coverage-html": "nyc --reporter=html mocha --recursive --exit",
     "attach": "docker exec -it nodebox_node_1 bash"
   }
 }
