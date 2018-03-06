@@ -33,17 +33,22 @@ module.exports = class DropboxStorageInterfaceProvider {
     return this.ConfigInterface.get('lastCursor')
   }
 
+  /**
+   * Returns a flat file list with full relative paths based on the cached
+   *   filelist. If the cached filelist is empty, it returns an empty array.
+   *   This is because the do not need to be files in a Dropbox account.
+   * @since 1.0.0
+   */
   dir () {
-    return new Promise((resolve, reject) => {
-      if (this.filelist.length === 0) {
-        this.fetchFileslistFolderAndKeepUpdated()
-      } else {
-        resolve(this.filelist)
-      }
-    })
+
   }
 
-  stat () {
+  /**
+   * Returns stats to one single entry. If the entry is not found in the cached
+   *   filelist, the Dropbox API is requested.
+   * @param path
+   */
+  stat (path) {
 
   }
 
@@ -61,6 +66,7 @@ module.exports = class DropboxStorageInterfaceProvider {
   /**
    * Fetch file list from Dropbox API and keep it updated
    * @since 1.0.0
+   * @todo Needs Testing!
    */
   fetchFileslistFolderAndKeepUpdated () {
     this.dbx.fileListFolder(
@@ -76,6 +82,7 @@ module.exports = class DropboxStorageInterfaceProvider {
    * Fetches the next bit of the file list from Dropbox API and emit an event to
    *   be called again, if there is something left.
    * @since 1.0.0
+   * @todo Needs Testing!
    */
   fetchFilesListFolderContinue () {
     this.dbx.filesListFolderContinue({
@@ -92,6 +99,7 @@ module.exports = class DropboxStorageInterfaceProvider {
    * @since 1.0.0
    * @param {Object.<string,*>} response Filelist or error from Dropbox API
    * @return {Promise<any>} Always resolves
+   * @todo Needs Testing!
    */
   handleFileListFolderResponse (response) {
     return new Promise((resolve) => {
@@ -122,6 +130,7 @@ module.exports = class DropboxStorageInterfaceProvider {
    *   config file.
    * @param {Object.<string,*>} response Fielist or error from Dropbox API
    * @since 1.0.0
+   * @todo Needs Testing!
    */
   handleCursor (response) {
     // console.log('ServerFileListWorker:handleCursor')
@@ -134,6 +143,7 @@ module.exports = class DropboxStorageInterfaceProvider {
    * Pushes an entry to the filelist
    * @param {Object.<string,*>} entry File or directory object from Dropbox API
    * @since 1.0.0
+   * @todo Needs Testing!
    */
   addEntryToList (entry) {
     this.filelist.push(entry)
