@@ -28,7 +28,6 @@ module.exports = class Nodebox {
    * @param {DropboxStorageInterfaceProvider} Provider Cloud storage interface provider
    */
   constructor (Provider = DefaultCloudStorageProvider) {
-    this.CloudStorageInterface = new CloudStorageInterface(Provider)
     this.StorageWatcher = new StorageWatcher()
     this.MessageQueue = new MessageQueue()
     this.UploadWorker = new UploadWorker()
@@ -39,6 +38,11 @@ module.exports = class Nodebox {
     this.DatabaseInterface = new DatabaseInterface()
     this.ErrorHandler = new ErrorHandler()
     this.EventEmitter = new EventEmitter()
+    this.CloudStorageInterface = new CloudStorageInterface(
+      new Provider(
+        this.ConfigInterface
+      )
+    )
   }
 
   /**
@@ -91,10 +95,14 @@ module.exports = class Nodebox {
    */
   startIndexers () {
     this.LocalStorageWorker = new StorageWorker(
-      new FilesystemStorageInterface(this.ConfigInterface.get('storagePath')),
+      new FilesystemStorageInterface(
+        this.ConfigInterface.get('storagePath')
+      ),
       this.DatabaseInterface
     )
-    // this.CloudStorageWorker = new StorageWorker(this.CloudStorageInterface)
+    this.CloudStorageWorker = new StorageWorker(
+      this.CloudStorageInterface
+    )
 
     this.LocalStorageWorker.go()
     // this.CloudStorageWorker.go()
