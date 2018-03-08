@@ -19,6 +19,19 @@ module.exports = class DropboxStorageInterfaceProvider {
     this._mq.on('has_more', () => {
       this.fetchFilesListFolderContinue()
     })
+    this._mq.on('longpoll_has_changes', () => {
+      this.fetchFilesListFolderContinue()
+    })
+    this._mq.on('has_no_more', () => {
+      this.subscribeLongPoll()
+    })
+    this._mq.on('longpoll_continue', () => {
+      this.subscribeLongPoll()
+    })
+
+    this.fetchFileslistFolder().then(() => {
+      console.log(this.dir())
+    })
   }
 
   getAccessToken (string = true) {
@@ -29,18 +42,27 @@ module.exports = class DropboxStorageInterfaceProvider {
     return this.ConfigInterface.get('path')
   }
 
-  getLastCursor () {
-    return this.ConfigInterface.get('lastCursor')
-  }
-
   /**
    * Returns a flat file list with full relative paths based on the cached
    *   filelist. If the cached filelist is empty, it returns an empty array.
    *   This is because the do not need to be files in a Dropbox account.
    * @since 1.0.0
+   * @param {bool} useLowercasePath Use path_lower instead of path_display;
+   *   default: path_display
+   * @return {Promise<Array<String>>} Always resolves to recursive file list
    */
-  dir () {
-
+  dir (useLowercasePath = false) {
+    return new Promise((resolve) => {
+      let _dir = _.map(this.filelist, (value) => {
+        if (useLowercasePath === true) {
+          return value.path_lower
+        } else {
+          return value.path_display
+        }
+      })
+      _dir.sort()
+      resolve(_.uniq(_dir))
+    })
   }
 
   /**
@@ -58,8 +80,7 @@ module.exports = class DropboxStorageInterfaceProvider {
       recursive: true,
       include_media_info: false,
       include_mounted_folders: true,
-      include_deleted: false,
-
+      include_deleted: false
     }
   }
 
@@ -68,13 +89,20 @@ module.exports = class DropboxStorageInterfaceProvider {
    * @since 1.0.0
    * @todo Needs Testing!
    */
-  fetchFileslistFolderAndKeepUpdated () {
-    this.dbx.fileListFolder(
-      this.getDefaultParams()
-    ).then((response) => {
-      this.handleFileListFolderResponse(response)
-    }).catch((err) => {
-      LogHandler.error(err)
+  fetchFileslistFolder () {
+    return new Promise((resolve, reject) => {
+      this.dbx.filesListFolder(
+        this.getDefaultParams()
+      ).then((response) => {
+        this._mq.on('has_no_more', () => {
+          resolve(this.filelist)
+        })
+
+        this.handleFileListFolderResponse(response)
+      }).catch((err) => {
+        LogHandler.error(err)
+        reject(err)
+      })
     })
   }
 
@@ -118,10 +146,43 @@ module.exports = class DropboxStorageInterfaceProvider {
       if (response.has_more === true) {
         this._mq.emit('has_more')
       }
+      if (response.has_more === false) {
+        this._mq.emit('has_no_more')
+      }
 
       if (!response.has_more && !this._longpolling) {
         this.subscribeLongPoll()
       }
+    })
+  }
+
+  /**
+   * Listens to the longpoll endpoint of Dropbox API and handles changes.
+   * @since 1.0.0
+   */
+  subscribeLongPoll () {
+    console.debug('ServerFileListWorker:subscribeLongPoll')
+    this.dbx.filesListFolderLongpoll({
+      cursor: this.getLastCursor()
+    }).then((response) => {
+      console.debug('ServerFileListWorker:subscribeLongPoll:then', response)
+
+      if (!response.changes) {
+        if (response.backoff) {
+          setTimeout(() => {
+            this._mq.emit('longpoll_continue', response.backoff * 1000)
+          })
+        } else {
+          this._mq.emit('longpoll_continue')
+        }
+      }
+
+      if (response.changes === true) {
+        this._mq.emit('longpoll_has_changes')
+      }
+    }).catch((err) => {
+      console.debug('ServerFileListWorker:subscribeLongPoll:catch')
+      LogHandler.error(err)
     })
   }
 
@@ -147,5 +208,28 @@ module.exports = class DropboxStorageInterfaceProvider {
    */
   addEntryToList (entry) {
     this.filelist.push(entry)
+  }
+  /**
+   * Returns the latest cursor from the database. If there is none, it fetches
+   *   the latest cursor from the Dropbox API and stores it to the database.
+   * @since 1.0.0
+   * @returns {string} Latest cursor
+   */
+  getLastCursor () {
+    let lastCursor = this.ConfigInterface.get('lastCursor')
+
+    if (lastCursor === '') {
+      this.dbx.filesListFolderGetLatestCursor(
+        this.getDefaultParams()
+      ).then((response) => {
+        this.handleCursor(response)
+        return this.ConfigInterface.get('lastCursor')
+      }).catch((err) => {
+        LogHandler.error(err)
+        throw new Error('No cursor found!')
+      })
+    }
+
+    return lastCursor
   }
 }

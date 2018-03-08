@@ -9,6 +9,7 @@ const chokidar = require('chokidar')
  *   changes.
  * @since 1.0.0
  * @type {StorageWatcher}
+ * @todo: Rewrite this to make use of `StorageInterface` and work for both, local and cloud
  */
 module.exports = class StorageWatcher {
   /**

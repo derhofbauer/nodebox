@@ -18,15 +18,24 @@ const cloudStorageInterface = new CloudStorageInterface(
 )
 
 describe('DropboxStorageInterfaceProvider', function () {
+  // before(function () {
+  //   cloudStorageInterface.StorageInterfaceProvider.fetchFileslistFolder()
+  // })
+
   it('should be able to access the Dropbox accessToken', function (done) {
     let accessToken = configInterface.get('accessToken')
     expect(cloudStorageInterface.StorageInterfaceProvider.getAccessToken()).to.equal(accessToken)
     done()
   })
-  it('should be able to access the last Dropbox Cursor', function (done) {
-    let lastCursor = configInterface.get('lastCursor')
-    expect(cloudStorageInterface.StorageInterfaceProvider.getLastCursor()).to.equal(lastCursor)
-    done()
+  describe('.getLastCursor()', function () {
+    it('should be able to access the last Dropbox Cursor', function (done) {
+      let lastCursor = configInterface.get('lastCursor')
+      expect(cloudStorageInterface.StorageInterfaceProvider.getLastCursor()).to.equal(lastCursor)
+      done()
+    })
+    it('should never be empty', function () {
+      expect(cloudStorageInterface.StorageInterfaceProvider.getLastCursor()).to.have.lengthOf.above(0)
+    })
   })
   it('should be able to access the Dropbox path', function (done) {
     let path = configInterface.get('path')
@@ -54,15 +63,20 @@ describe('DropboxStorageInterfaceProvider', function () {
       expect(params).to.have.property('recursive')
       done()
     })
-    it('should provide a full file list with metadata', function (done) {
-      cloudStorageInterface.StorageInterfaceProvider.getFilelist().then((files) => {
-        expect(files).to.be.an('array')
-        files.every((value) => {
-          expect(value).to.be.an('object')
-          expect(value).to.have.property('path_lower')
-          expect(value).to.have.property('.tag')
+
+    describe('.fetchFileslistFolder', function () {
+      it('should return an array of objects', function (done) {
+        cloudStorageInterface.StorageInterfaceProvider.fetchFileslistFolder().should.eventually.be.an('array').and.notify(done)
+      })
+      it('should provide a full file list with metadata', function () {
+        return cloudStorageInterface.StorageInterfaceProvider.fetchFileslistFolder().then((files) => {
+          files.every((value) => {
+            expect(value).to.be.an('object')
+            expect(value).to.have.property('path_lower')
+            expect(value).to.have.property('.tag')
+          })
         })
-      }).and.notify(done)
+      })
     })
   })
 })
