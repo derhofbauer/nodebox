@@ -4,6 +4,7 @@ const Dropbox = require('dropbox')
 const _ = require('lodash')
 const LogHandler = require('../../../Handlers/Log/LogHandler')
 const MessageQueue = require('../../../Queues/MessageQueue')
+const path = require('../../../../Overrides/path')
 
 module.exports = class DropboxStorageInterfaceProvider {
   constructor (ConfigInterface) {
@@ -13,6 +14,8 @@ module.exports = class DropboxStorageInterfaceProvider {
       accessToken: this.getAccessToken()
     })
 
+    this._longpolling = false
+
     this.filelist = []
     this._mq = new MessageQueue()
 
@@ -20,17 +23,24 @@ module.exports = class DropboxStorageInterfaceProvider {
       this.fetchFilesListFolderContinue()
     })
     this._mq.on('longpoll_has_changes', () => {
+      this._longpolling = false
       this.fetchFilesListFolderContinue()
     })
     this._mq.on('has_no_more', () => {
+      LogHandler.verbose('DropboxCloudStorageProvider:subscribeLongpoll')
       this.subscribeLongPoll()
     })
     this._mq.on('longpoll_continue', () => {
+      LogHandler.verbose('DropboxCloudStorageProvider:subscribeLongpoll')
       this.subscribeLongPoll()
     })
+  }
 
+  go () {
     this.fetchFileslistFolder().then(() => {
-      console.log(this.dir())
+      LogHandler.silly(this.dir())
+    }).catch((err) => {
+      throw new Error(err)
     })
   }
 
@@ -68,10 +78,12 @@ module.exports = class DropboxStorageInterfaceProvider {
   /**
    * Returns stats to one single entry. If the entry is not found in the cached
    *   filelist, the Dropbox API is requested.
-   * @param path
+   * @param p
    */
-  stat (path) {
+  stats (p) {
+    p = path.addLeadingSlash(p)
 
+    return _.find(this.filelist, {'path_lower': p.toLowerCase()})
   }
 
   getDefaultParams () {
@@ -100,7 +112,7 @@ module.exports = class DropboxStorageInterfaceProvider {
 
         this.handleFileListFolderResponse(response)
       }).catch((err) => {
-        LogHandler.error(err)
+        // LogHandler.error(err)
         reject(err)
       })
     })
@@ -131,11 +143,11 @@ module.exports = class DropboxStorageInterfaceProvider {
    */
   handleFileListFolderResponse (response) {
     return new Promise((resolve) => {
-      console.debug('ServerFileListWorker:handleListFolderResponse')
+      LogHandler.verbose('ServerFileListWorker:handleListFolderResponse')
       this.handleCursor(response)
 
       response.entries.forEach((entry, index, collection) => {
-        this.addEntryTolist(entry)
+        this.processEntry(entry)
 
         if (index === collection.length - 1) {
           resolve()
@@ -149,10 +161,6 @@ module.exports = class DropboxStorageInterfaceProvider {
       if (response.has_more === false) {
         this._mq.emit('has_no_more')
       }
-
-      if (!response.has_more && !this._longpolling) {
-        this.subscribeLongPoll()
-      }
     })
   }
 
@@ -161,29 +169,34 @@ module.exports = class DropboxStorageInterfaceProvider {
    * @since 1.0.0
    */
   subscribeLongPoll () {
-    console.debug('ServerFileListWorker:subscribeLongPoll')
-    this.dbx.filesListFolderLongpoll({
-      cursor: this.getLastCursor()
-    }).then((response) => {
-      console.debug('ServerFileListWorker:subscribeLongPoll:then', response)
+    if (!this._longpolling) {
+      this._longpolling = true // toggle the switch to enable on connection at once only
 
-      if (!response.changes) {
-        if (response.backoff) {
-          setTimeout(() => {
-            this._mq.emit('longpoll_continue', response.backoff * 1000)
-          })
-        } else {
-          this._mq.emit('longpoll_continue')
+      LogHandler.verbose('ServerFileListWorker:subscribeLongPoll')
+      this.dbx.filesListFolderLongpoll({
+        cursor: this.getLastCursor()
+      }).then((response) => {
+        LogHandler.verbose('ServerFileListWorker:subscribeLongPoll:then', response)
+
+        if (!response.changes) {
+          if (response.backoff) {
+            setTimeout(() => {
+              this._mq.emit('longpoll_continue')
+              LogHandler.silly(`backoff for ${response.backoff * 1000} seconds`)
+            }, response.backoff * 1000)
+          } else {
+            this._mq.emit('longpoll_continue')
+          }
         }
-      }
 
-      if (response.changes === true) {
-        this._mq.emit('longpoll_has_changes')
-      }
-    }).catch((err) => {
-      console.debug('ServerFileListWorker:subscribeLongPoll:catch')
-      LogHandler.error(err)
-    })
+        if (response.changes === true) {
+          this._mq.emit('longpoll_has_changes')
+        }
+      }).catch((err) => {
+        LogHandler.verbose('ServerFileListWorker:subscribeLongPoll:catch')
+        LogHandler.error(err)
+      })
+    }
   }
 
   /**
@@ -194,7 +207,7 @@ module.exports = class DropboxStorageInterfaceProvider {
    * @todo Needs Testing!
    */
   handleCursor (response) {
-    // console.log('ServerFileListWorker:handleCursor')
+    LogHandler.verbose('ServerFileListWorker:handleCursor')
     if (response.cursor) {
       this.ConfigInterface.set('lastCursor', response.cursor)
     }
@@ -209,6 +222,16 @@ module.exports = class DropboxStorageInterfaceProvider {
   addEntryToList (entry) {
     this.filelist.push(entry)
   }
+
+  /**
+   * Decides what to do with an entry - delete, move or add
+   * @param {Object.<string,*>} entry File or directory object from Dropbox API
+   * @since 1.0.0
+   */
+  processEntry (entry) {
+    this.addEntryToList(entry)
+  }
+
   /**
    * Returns the latest cursor from the database. If there is none, it fetches
    *   the latest cursor from the Dropbox API and stores it to the database.

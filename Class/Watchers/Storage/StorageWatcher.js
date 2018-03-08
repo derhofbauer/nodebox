@@ -42,7 +42,7 @@ module.exports = class StorageWatcher {
     })
 
     this._watcher.on('all', (eventName, path) => {
-      LogHandler.debug(`Event ${eventName} was emitted: ${path}`)
+      LogHandler.silly(`Event ${eventName} was emitted: ${path}`)
     })
     Array.from(['add', 'change', 'addDir', 'unlink', 'unlinkDir']).forEach((event) => {
       this._watcher.on(event, (path) => {

@@ -58,10 +58,6 @@ module.exports = class Nodebox {
       LogHandler.error(err)
       throw new Error(err)
     })
-
-    /*Promise.all(this.setup()).then(() => {
-      this.startIndexers()
-    })*/
   }
 
   /**
@@ -129,5 +125,8 @@ module.exports = class Nodebox {
     LogHandler.debug('LocalStorageWorker started')
 
     this.CloudStorageWorker.go()
+    LogHandler.debug('CloudStorageWorker started')
+
+    this.CloudStorageWorker.StorageInterface.StorageInterfaceProvider.go()
   }
 }
