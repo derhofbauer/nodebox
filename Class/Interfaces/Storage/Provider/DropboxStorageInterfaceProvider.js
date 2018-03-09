@@ -27,18 +27,17 @@ module.exports = class DropboxStorageInterfaceProvider {
       this.fetchFilesListFolderContinue()
     })
     this._mq.on('has_no_more', () => {
-      LogHandler.verbose('DropboxCloudStorageProvider:subscribeLongpoll')
       this.subscribeLongPoll()
+      LogHandler.silly('DIR Server', this.dir())
     })
     this._mq.on('longpoll_continue', () => {
-      LogHandler.verbose('DropboxCloudStorageProvider:subscribeLongpoll')
       this.subscribeLongPoll()
     })
   }
 
   go () {
     this.fetchFileslistFolder().then(() => {
-      LogHandler.silly(this.dir())
+      // LogHandler.silly("DIR Server", this.dir())
     }).catch((err) => {
       throw new Error(err)
     })
@@ -128,6 +127,9 @@ module.exports = class DropboxStorageInterfaceProvider {
     this.dbx.filesListFolderContinue({
       cursor: this.getLastCursor()
     }).then((response) => {
+      // LogHandler.verbose('fetchFilesListFolderContinue:then', response)
+      console.debug(response)
+
       this.handleFileListFolderResponse(response)
     }).catch((err) => {
       LogHandler.error(err)
@@ -146,13 +148,7 @@ module.exports = class DropboxStorageInterfaceProvider {
       LogHandler.verbose('ServerFileListWorker:handleListFolderResponse')
       this.handleCursor(response)
 
-      response.entries.forEach((entry, index, collection) => {
-        this.processEntry(entry)
-
-        if (index === collection.length - 1) {
-          resolve()
-        }
-      })
+      this.dispatchResponse(response)
 
       // emit an event for this.fetchFilesListFolderContinue to be called
       if (response.has_more === true) {
@@ -178,7 +174,7 @@ module.exports = class DropboxStorageInterfaceProvider {
       }).then((response) => {
         LogHandler.verbose('ServerFileListWorker:subscribeLongPoll:then', response)
 
-        if (!response.changes) {
+        if (response.changes === false) {
           if (response.backoff) {
             setTimeout(() => {
               this._mq.emit('longpoll_continue')
@@ -207,7 +203,7 @@ module.exports = class DropboxStorageInterfaceProvider {
    * @todo Needs Testing!
    */
   handleCursor (response) {
-    LogHandler.verbose('ServerFileListWorker:handleCursor')
+    LogHandler.verbose('ServerFileListWorker:handleCursor', this.getLastCursor())
     if (response.cursor) {
       this.ConfigInterface.set('lastCursor', response.cursor)
     }
@@ -224,12 +220,73 @@ module.exports = class DropboxStorageInterfaceProvider {
   }
 
   /**
-   * Decides what to do with an entry - delete, move or add
+   * Removes an entry from the filelist
    * @param {Object.<string,*>} entry File or directory object from Dropbox API
    * @since 1.0.0
+   * @todo Needs Testing!
    */
-  processEntry (entry) {
-    this.addEntryToList(entry)
+  removeEntryFromList (entry) {
+    _.remove(this.filelist, (value) => {
+      return value.path_lower === entry.path_lower
+    })
+  }
+
+  /**
+   * Decides what to do with an entry - delete, move or add
+   * @param {Object.<*>} response Dropbox API list_folder response
+   * @since 1.0.0
+   */
+  dispatchResponse (response) {
+    /**
+     * process new files before deleted files!
+     *
+     * FIRST VERSION:
+     * + download new files and folders or copy from existing files
+     * + remove deleted files and folders
+     *
+     * SECOND VERSION:
+     *
+     * if .tag==file:
+     * - check if file with same hash exists on disk already
+     * - - yes: copy existing file
+     * - - no: queue download of file
+     * if .tag==folder:
+     * - create folder
+     *
+     * if .tag==deleted && all 'new' events are finished:
+     * - delete file/folder
+     *
+     * if .tag==deleted && deleted item is file && stored hash of deleted file is same as hash of 'new' file:
+     * - mv file
+     *
+     * if .tag==deleted && deleted item is folder && folder contains files && new files with same hashes as those files must be downloaded
+     * - create new folder
+     * - mv files
+     */
+
+    let folders = _.filter(response.entries, {'.tag': 'folder'})
+    // console.log(folders)
+    folders.forEach((value) => {
+      // create folders
+      this.addEntryToList(value)
+    })
+
+    let files = _.filter(response.entries, {'.tag': 'file'})
+    // console.log(files)
+    files.forEach((value) => {
+      this.addEntryToList(value)
+      // if file exists
+        // cp existing file
+      // else
+        // download file
+    })
+
+    let deleted = _.filter(response.entries, {'.tag': 'deleted'})
+    // console.log(deleted)
+    deleted.forEach((value) => {
+      this.removeEntryFromList(value)
+      // delete files and folders
+    })
   }
 
   /**
