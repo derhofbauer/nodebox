@@ -142,6 +142,7 @@ module.exports = class StorageWorker {
       let relativePath = this.getRelativePathFromAbsolute(absolutePath)
 
       this.DatabaseInterface.removeByPath(relativePath).then(() => {
+        LogHandler.silly(`Removing ${relativePath} from database.`)
         resolve()
       }).catch((err) => {
         LogHandler.error(err)

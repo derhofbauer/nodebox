@@ -10,7 +10,7 @@ services:
     working_dir: /opt/nodebox
     environment:
       NODE_ENV: 'development'
-      LOG_LEVEL: 'debug'
+      LOG_LEVEL: 'silly'
     ports:
       - 9229:9229
 #    links:

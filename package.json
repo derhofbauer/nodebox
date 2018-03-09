@@ -17,8 +17,8 @@
     "os": "^0.1.1",
     "path": "^0.12.7",
     "path-exists": "^3.0.0",
-    "prompt": "^1.0.0",
-    "winston-color": "^1.0.0"
+    "promptly": "^3.0.3",
+    "winston": "^2.4.0"
   },
   "devDependencies": {
     "chai": "^4.1.2",
@@ -51,6 +51,7 @@
     "jsdoc": "jsdoc **.js ./**/*.js -r",
     "lint": "yarn run eslint && yarn run standard",
     "test": "mocha --recursive --exit",
+    "test-watch": "mocha --recursive --exit --watch",
     "coverage": "nyc --reporter=lcov mocha --recursive --exit && yarn run report",
     "coverage-html": "nyc --reporter=html mocha --recursive --exit && yarn run report",
     "report": "nyc report",

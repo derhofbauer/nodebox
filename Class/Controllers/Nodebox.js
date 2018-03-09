@@ -19,7 +19,7 @@ const LogHandler = require('../Handlers/Log/LogHandler')
 const EventEmitter = require('../Emitters/EventEmitter')
 
 const fs = require('../../Overrides/fs')
-const prompt = require('prompt')
+const promptly = require('promptly')
 
 module.exports = class Nodebox {
   /**
@@ -28,7 +28,6 @@ module.exports = class Nodebox {
    * @param {DropboxStorageInterfaceProvider} Provider Cloud storage interface provider
    */
   constructor (Provider = DefaultCloudStorageProvider) {
-    this.CloudStorageInterface = new CloudStorageInterface(Provider)
     this.StorageWatcher = new StorageWatcher()
     this.MessageQueue = new MessageQueue()
     this.UploadWorker = new UploadWorker()
@@ -39,6 +38,11 @@ module.exports = class Nodebox {
     this.DatabaseInterface = new DatabaseInterface()
     this.ErrorHandler = new ErrorHandler()
     this.EventEmitter = new EventEmitter()
+    this.CloudStorageInterface = new CloudStorageInterface(
+      new Provider(
+        this.ConfigInterface
+      )
+    )
   }
 
   /**
@@ -48,8 +52,11 @@ module.exports = class Nodebox {
   go () {
     LogHandler.log('Go! :D')
 
-    Promise.all(this.setup()).then(() => {
+    this.setup().then(() => {
       this.startIndexers()
+    }).catch((err) => {
+      LogHandler.error(err)
+      throw new Error(err)
     })
   }
 
@@ -59,30 +66,43 @@ module.exports = class Nodebox {
    * @returns {Array<Promise>} Array of promises
    */
   setup () {
-    fs.mkdirIfNotExists(this.ConfigInterface.get('storagePath'))
+    return new Promise((resolve, reject) => {
+      fs.mkdirIfNotExists(this.ConfigInterface.get('storagePath'))
 
-    let promiseStack = []
+      let promiseStack = []
 
-    if (this.ConfigInterface.get('accessToken') === null) {
-      promiseStack.push(
-        this.promptPromise('Please enter a valid API V2 access token').then((accessToken) => {
-          this.ConfigInterface.set('accessToken', accessToken)
-        }).catch((err) => {
-          LogHandler.error(err)
-        })
-      )
-    }
-    if (this.ConfigInterface.get('path') === null) {
-      promiseStack.push(
-        this.promptPromise('Please enter a valid path within your dropbox').then((path) => {
-          this.ConfigInterface.set('path', path)
-        }).catch((err) => {
-          LogHandler.error(err)
-        })
-      )
-    }
+      if (this.ConfigInterface.get('accessToken') === null) {
+        promiseStack.push(
+          this.promptForConfig('Please enter a valid API V2 access token:', 'accessToken')
+        )
+      }
+      if (this.ConfigInterface.get('path') === null) {
+        promiseStack.push(
+          this.promptForConfig('Please enter a valid path within your dropbox:', 'path')
+        )
+      }
 
-    return promiseStack
+      Promise.all(promiseStack).then(() => {
+        resolve()
+      }).catch((err) => {
+        reject(err)
+      })
+    })
+  }
+
+  /**
+   * CLI prompts the user
+   * @since 1.0.0
+   * @param {string} question Description of what the user is supposed to input
+   * @param {string} configName Name of the config value we ask for
+   * @returns {Promise<any>} Resolves on input, rejects on error
+   */
+  promptForConfig (question, configName) {
+    return promptly.prompt(question).then((answer) => {
+      this.ConfigInterface.set(configName, answer)
+    }).catch((err) => {
+      LogHandler.error(err)
+    })
   }
 
   /**
@@ -91,37 +111,22 @@ module.exports = class Nodebox {
    */
   startIndexers () {
     this.LocalStorageWorker = new StorageWorker(
-      new FilesystemStorageInterface(this.ConfigInterface.get('storagePath')),
+      new FilesystemStorageInterface(
+        this.ConfigInterface.get('storagePath')
+      ),
       this.DatabaseInterface
     )
-    // this.CloudStorageWorker = new StorageWorker(this.CloudStorageInterface)
+    this.CloudStorageWorker = new StorageWorker(
+      this.CloudStorageInterface,
+      this.DatabaseInterface
+    )
 
     this.LocalStorageWorker.go()
-    // this.CloudStorageWorker.go()
-  }
+    LogHandler.debug('LocalStorageWorker started')
 
-  /**
-   * CLI prompts the user
-   * @since 1.0.0
-   * @param {string} description Description of what the user is supposed to input
-   * @returns {Promise<any>} Resolves on input, rejects on error
-   */
-  promptPromise (description) {
-    return new Promise((resolve, reject) => {
-      prompt.start()
+    this.CloudStorageWorker.go()
+    LogHandler.debug('CloudStorageWorker started')
 
-      prompt.get({
-        properties: {
-          input: {
-            description: description
-          }
-        }
-      }, (error, result) => {
-        if (error) {
-          reject(error)
-        }
-        resolve(result.input)
-      })
-    })
+    this.CloudStorageWorker.StorageInterface.StorageInterfaceProvider.go()
   }
 }

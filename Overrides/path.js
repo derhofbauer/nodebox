@@ -34,7 +34,7 @@ path.expandTilde = (p) => {
  * @returns {string} Computed path
  */
 path.relatify = (p, fragment) => {
-  return p.replace(fragment, '')
+  return path.addLeadingSlash(p.replace(fragment, ''))
 }
 
 /**
