@@ -20,4 +20,9 @@ describe('LogHandler', function () {
     LogHandler.error('error test')
     done()
   })
+
+  it('should get log level from ENV', function (done) {
+    expect(LogHandler.transports.console.level).to.equal('silly')
+    done()
+  })
 })
