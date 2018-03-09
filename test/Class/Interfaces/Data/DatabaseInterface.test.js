@@ -6,7 +6,7 @@ const fs = require('fs')
 chai.use(chaiAsPromised)
 
 const DATABASE_PATH = '/tmp/testdb.json'
-const TEST_FILE = {
+var TEST_FILE = {
   path_lower: 'foobar.test',
   size: 0,
   meta_data: "foo",
@@ -25,8 +25,13 @@ describe('DatabaseInterface', function () {
     done()
   })
 
-  it('should add or update data by given path', function (done) {
-    databaseInterface.addOrUpdateByPath(TEST_FILE).should.eventually.deep.equal([TEST_FILE]).and.notify(done)
+  it('should add data by given path', function (done) {
+    databaseInterface.addOrUpdateByPath(TEST_FILE).should.eventually.deep.equal(TEST_FILE).and.notify(done)
+  })
+  it('should update data by given path', function (done) {
+    TEST_FILE.size = 42
+
+    databaseInterface.addOrUpdateByPath(TEST_FILE).should.eventually.deep.equal(TEST_FILE).and.notify(done)
   })
 
   it('should return data by given path', function (done) {
