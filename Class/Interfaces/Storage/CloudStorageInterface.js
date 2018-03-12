@@ -12,7 +12,7 @@ module.exports = class CloudStorageInterface extends StorageInterfaceBase {
     return this.StorageInterfaceProvider.dir()
   }
 
-  stat () {
-    return this.StorageInterfaceProvider.stat()
+  stat (path) {
+    return this.StorageInterfaceProvider.stat(path)
   }
 }

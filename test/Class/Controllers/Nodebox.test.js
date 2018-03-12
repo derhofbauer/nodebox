@@ -1,6 +1,8 @@
 // dependencies
 const chai = require('chai')
 const expect = chai.expect
+const fs = require('fs')
+const path = require('path')
 
 // subject of this test
 const Nodebox = require('../../../Class/Controllers/Nodebox')
@@ -19,6 +21,30 @@ describe('Nodebox', function () {
       expect(nodebox).to.have.property('ErrorHandler')
       expect(nodebox).to.have.property('EventEmitter')
       done()
+    })
+  })
+
+  describe('.setup', function () {
+    before (function () {
+      fs.rename(path.expandTilde('~/.config/nodebox/config.json'), path.expandTilde('~/.config/nodebox/config.json.test'), (err) => {
+        if (err) throw err
+      })
+    })
+
+    after (function () {
+      fs.rename(path.expandTilde('~/.config/nodebox/config.json.test'), path.expandTilde('~/.config/nodebox/config.json'), (err) => {
+        if (err) throw err
+      })
+    })
+
+    it('should always resolve', function (done) {
+      expect(nodebox.setup()).to.eventually.be.fulfilled.and.notify(done)
+    })
+  })
+
+  describe('.promptForConfig', function () {
+    it('should resolve', function (done) {
+
     })
   })
 })

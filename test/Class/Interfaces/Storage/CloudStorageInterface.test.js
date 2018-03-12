@@ -51,7 +51,10 @@ describe('DropboxStorageInterfaceProvider', function () {
 
   describe('.stat()', function () {
     it('should return stats', function (done) {
-      cloudStorageInterface.stat('/root').should.eventually.be.an('object').and.notify(done)
+      cloudStorageInterface.stat('/.dotfiles').should.eventually.be.an('object').and.notify(done)
+    })
+    it('should reject, when path is not found', function (done) {
+      cloudStorageInterface.stat('/foo/bar').should.eventually.be.rejected.and.notify(done)
     })
   })
 
