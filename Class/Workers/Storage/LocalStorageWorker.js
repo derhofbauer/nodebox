@@ -1,6 +1,7 @@
 'use strict'
 
 const LocalStorageWatcher = require('../../Watchers/Storage/LocalStorageWatcher')
+const NodeboxEventEmitter = require('../../Emitters/EventEmitter')
 const POSITIVE_EVENTS = Array.from(['add', 'change', 'addDir'])
 const NEGATIVE_EVENTS = Array.from(['unlink', 'unlinkDir'])
 
@@ -13,7 +14,7 @@ const path = require('../../../Overrides/path')
 const async = require('async')
 const PARALLEL_LIMIT = process.env.PARALLEL_LIMIT || 2
 
-module.exports = class LocalStorageWorker {
+module.exports = class LocalStorageWorker extends NodeboxEventEmitter {
   /**
    * Constructor
    * @since 1.0.0
@@ -21,6 +22,8 @@ module.exports = class LocalStorageWorker {
    * @param {DatabaseInterface} DatabaseInterface
    */
   constructor (StorageInterface, DatabaseInterface) {
+    super()
+
     LogHandler.debug(`PARALLEL_LIMIT: ${PARALLEL_LIMIT}`)
     this.StorageInterface = StorageInterface
     this.StorageWatcher = new LocalStorageWatcher(this.StorageInterface)
@@ -40,6 +43,7 @@ module.exports = class LocalStorageWorker {
 
     this.q.drain = () => {
       LogHandler.debug('StorageWorker Work Queue: all items have been processed')
+      this.emit('ready')
     }
 
     this.StorageWatcher.MessageQueue.on('new', () => {

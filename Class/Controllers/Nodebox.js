@@ -123,6 +123,16 @@ module.exports = class Nodebox {
     this.CloudStorageWorker.go()
     LogHandler.debug('CloudStorageWorker started')
 
-    this.CloudStorageWorker.StorageInterface.StorageInterfaceProvider.go()
+    this.LocalStorageWorker.on('ready', () => {
+      this.LocalStorageWorker.StorageInterface.dir().then((dir) => {
+        console.log('Local:', dir)
+      })
+    })
+
+    this.CloudStorageWorker.on('ready', () => {
+      this.CloudStorageWorker.StorageInterface.dir().then((dir) => {
+        console.log('Cloud:', dir)
+      })
+    })
   }
 }

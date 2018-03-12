@@ -27,8 +27,9 @@ module.exports = class DropboxStorageInterfaceProvider {
       this.fetchFilesListFolderContinue()
     })
     this._mq.on('has_no_more', () => {
+      this._mq.emit('ready')
       this.subscribeLongPoll()
-      LogHandler.silly('DIR Server', this.dir())
+      // LogHandler.silly('DIR Server', this.dir())
     })
     this._mq.on('longpoll_continue', () => {
       this.subscribeLongPoll()
