@@ -54,9 +54,6 @@ module.exports = class Nodebox {
 
     this.setup().then(() => {
       this.startIndexers()
-    }).catch((err) => {
-      LogHandler.error(err)
-      throw new Error(err)
     })
   }
 
@@ -66,7 +63,7 @@ module.exports = class Nodebox {
    * @returns {Array<Promise>} Array of promises
    */
   setup () {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       fs.mkdirIfNotExists(this.ConfigInterface.get('storagePath'))
 
       let promiseStack = []
@@ -84,8 +81,6 @@ module.exports = class Nodebox {
 
       Promise.all(promiseStack).then(() => {
         resolve()
-      }).catch((err) => {
-        reject(err)
       })
     })
   }
@@ -97,9 +92,11 @@ module.exports = class Nodebox {
    * @param {string} configName Name of the config value we ask for
    * @returns {Promise<any>} Resolves on input, rejects on error
    */
-  promptForConfig (question, configName) {
+  promptForConfig (question, configName = null) {
     return promptly.prompt(question).then((answer) => {
-      this.ConfigInterface.set(configName, answer)
+      if (configName !== null) {
+        this.ConfigInterface.set(configName, answer)
+      }
     }).catch((err) => {
       LogHandler.error(err)
     })

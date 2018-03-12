@@ -25,8 +25,24 @@ describe('DatabaseInterface', function () {
     done()
   })
 
-  it('should add or update data by given path', function (done) {
-    databaseInterface.addOrUpdateByPath(TEST_FILE).should.eventually.deep.equal([TEST_FILE]).and.notify(done)
+  it('should add data by given path and return object', function (done) {
+    databaseInterface.addOrUpdateByPath(TEST_FILE).should.eventually.deep.equal(TEST_FILE).and.notify(done)
+  })
+
+  it('should update data by given path and return object', function (done) {
+    let data = {
+      path_lower: 'foobar.test',
+      size: 42,
+      meta_data: "foo",
+      meta_data2: "bar"
+    }
+
+    let file = databaseInterface.get().find({path_lower: data.path_lower})
+    // console.log('--------')
+    // console.log(file.value())
+    // console.log('--------')
+
+    databaseInterface.addOrUpdateByPath(data).should.eventually.deep.equal(data).and.notify(done)
   })
 
   it('should return data by given path', function (done) {
