@@ -4,8 +4,8 @@ const CloudStorageInterface = require('../Interfaces/Storage/CloudStorageInterfa
 const DefaultCloudStorageProvider = require('../Interfaces/Storage/Provider/DropboxStorageInterfaceProvider')
 const FilesystemStorageInterface = require('../Interfaces/Storage/FilesystemStorageInterface')
 
-const StorageWorker = require('../Workers/Storage/StorageWorker')
-const StorageWatcher = require('../Watchers/Storage/StorageWatcher')
+const LocalStorageWorker = require('../Workers/Storage/LocalStorageWorker')
+const LocalStorageWatcher = require('../Watchers/Storage/LocalStorageWatcher')
 const MessageQueue = require('../Queues/MessageQueue')
 
 const UploadWorker = require('../Workers/Transfer/UploadWorker')
@@ -28,7 +28,7 @@ module.exports = class Nodebox {
    * @param {DropboxStorageInterfaceProvider} Provider Cloud storage interface provider
    */
   constructor (Provider = DefaultCloudStorageProvider) {
-    this.StorageWatcher = new StorageWatcher()
+    this.LocalStorageWatcher = new LocalStorageWatcher()
     this.MessageQueue = new MessageQueue()
     this.UploadWorker = new UploadWorker()
     this.DownloadWorker = new DownloadWorker()
@@ -107,13 +107,13 @@ module.exports = class Nodebox {
    * @since 1.0.0
    */
   startIndexers () {
-    this.LocalStorageWorker = new StorageWorker(
+    this.LocalStorageWorker = new LocalStorageWorker(
       new FilesystemStorageInterface(
         this.ConfigInterface.get('storagePath')
       ),
       this.DatabaseInterface
     )
-    this.CloudStorageWorker = new StorageWorker(
+    this.CloudStorageWorker = new LocalStorageWorker(
       this.CloudStorageInterface,
       this.DatabaseInterface
     )

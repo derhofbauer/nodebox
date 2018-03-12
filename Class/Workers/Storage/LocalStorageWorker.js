@@ -1,6 +1,6 @@
 'use strict'
 
-const StorageWatcher = require('../../Watchers/Storage/StorageWatcher')
+const StorageWatcher = require('../../Watchers/Storage/LocalStorageWatcher')
 const POSITIVE_EVENTS = Array.from(['add', 'change', 'addDir'])
 const NEGATIVE_EVENTS = Array.from(['unlink', 'unlinkDir'])
 
@@ -13,7 +13,7 @@ const path = require('../../../Overrides/path')
 const async = require('async')
 const PARALLEL_LIMIT = process.env.PARALLEL_LIMIT || 2
 
-module.exports = class StorageWorker {
+module.exports = class LocalStorageWorker {
   /**
    * Constructor
    * @since 1.0.0
