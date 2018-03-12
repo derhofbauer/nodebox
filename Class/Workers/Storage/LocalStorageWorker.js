@@ -1,6 +1,6 @@
 'use strict'
 
-const StorageWatcher = require('../../Watchers/Storage/LocalStorageWatcher')
+const LocalStorageWatcher = require('../../Watchers/Storage/LocalStorageWatcher')
 const POSITIVE_EVENTS = Array.from(['add', 'change', 'addDir'])
 const NEGATIVE_EVENTS = Array.from(['unlink', 'unlinkDir'])
 
@@ -23,7 +23,7 @@ module.exports = class LocalStorageWorker {
   constructor (StorageInterface, DatabaseInterface) {
     LogHandler.debug(`PARALLEL_LIMIT: ${PARALLEL_LIMIT}`)
     this.StorageInterface = StorageInterface
-    this.StorageWatcher = new StorageWatcher(this.StorageInterface)
+    this.StorageWatcher = new LocalStorageWatcher(this.StorageInterface)
 
     this.DatabaseInterface = DatabaseInterface
   }

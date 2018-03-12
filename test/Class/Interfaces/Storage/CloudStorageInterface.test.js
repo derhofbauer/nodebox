@@ -19,7 +19,7 @@ const cloudStorageInterface = new CloudStorageInterface(
 
 describe('DropboxStorageInterfaceProvider', function () {
   // before(function () {
-  //   cloudStorageInterface.StorageInterfaceProvider.fetchFileslistFolder()
+  //   cloudStorageInterface.StorageInterfaceProvider.fetchFilesListFolder()
   // })
 
   it('should be able to access the Dropbox accessToken', function (done) {
@@ -67,12 +67,12 @@ describe('DropboxStorageInterfaceProvider', function () {
       done()
     })
 
-    describe('.fetchFileslistFolder', function () {
+    describe('.fetchFilesListFolder', function () {
       it('should return an array of objects', function (done) {
-        cloudStorageInterface.StorageInterfaceProvider.fetchFileslistFolder().should.eventually.be.an('array').and.notify(done)
+        cloudStorageInterface.StorageInterfaceProvider.fetchFilesListFolder().should.eventually.be.an('array').and.notify(done)
       })
       it('should provide a full file list with metadata', function () {
-        return cloudStorageInterface.StorageInterfaceProvider.fetchFileslistFolder().then((files) => {
+        return cloudStorageInterface.StorageInterfaceProvider.fetchFilesListFolder().then((files) => {
           files.every((value) => {
             expect(value).to.be.an('object')
             expect(value).to.have.property('path_lower')
