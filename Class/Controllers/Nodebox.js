@@ -4,12 +4,12 @@ const CloudStorageInterface = require('../Interfaces/Storage/CloudStorageInterfa
 const DefaultCloudStorageProvider = require('../Interfaces/Storage/Provider/DropboxStorageInterfaceProvider')
 const FilesystemStorageInterface = require('../Interfaces/Storage/FilesystemStorageInterface')
 
-const StorageWorker = require('../Workers/Storage/StorageWorker')
-const StorageWatcher = require('../Watchers/Storage/StorageWatcher')
+const LocalStorageWorker = require('../Workers/Storage/LocalStorageWorker')
+const CloudStorageWorker = require('../Workers/Storage/CloudStorageWorker')
 const MessageQueue = require('../Queues/MessageQueue')
 
-const UploadWorker = require('../Workers/Transfer/UploadWorker')
-const DownloadWorker = require('../Workers/Transfer/DownloadWorker')
+// const UploadWorker = require('../Workers/Transfer/UploadWorker')
+// const DownloadWorker = require('../Workers/Transfer/DownloadWorker')
 
 const DatabaseInterface = require('../Interfaces/Data/DatabaseInterface')
 const ConfigInterface = require('../Interfaces/Config/ConfigInterface')
@@ -28,10 +28,9 @@ module.exports = class Nodebox {
    * @param {DropboxStorageInterfaceProvider} Provider Cloud storage interface provider
    */
   constructor (Provider = DefaultCloudStorageProvider) {
-    this.StorageWatcher = new StorageWatcher()
     this.MessageQueue = new MessageQueue()
-    this.UploadWorker = new UploadWorker()
-    this.DownloadWorker = new DownloadWorker()
+    // this.UploadWorker = new UploadWorker()
+    // this.DownloadWorker = new DownloadWorker()
     this.ConfigInterface = new ConfigInterface({
       path: '/.dotfiles/testfolder'
     })
@@ -107,13 +106,13 @@ module.exports = class Nodebox {
    * @since 1.0.0
    */
   startIndexers () {
-    this.LocalStorageWorker = new StorageWorker(
+    this.LocalStorageWorker = new LocalStorageWorker(
       new FilesystemStorageInterface(
         this.ConfigInterface.get('storagePath')
       ),
       this.DatabaseInterface
     )
-    this.CloudStorageWorker = new StorageWorker(
+    this.CloudStorageWorker = new CloudStorageWorker(
       this.CloudStorageInterface,
       this.DatabaseInterface
     )
@@ -124,6 +123,16 @@ module.exports = class Nodebox {
     this.CloudStorageWorker.go()
     LogHandler.debug('CloudStorageWorker started')
 
-    this.CloudStorageWorker.StorageInterface.StorageInterfaceProvider.go()
+    this.LocalStorageWorker.on('ready', () => {
+      this.LocalStorageWorker.StorageInterface.dir().then((dir) => {
+        console.log('Local:', dir)
+      })
+    })
+
+    this.CloudStorageWorker.on('ready', () => {
+      this.CloudStorageWorker.StorageInterface.dir().then((dir) => {
+        console.log('Cloud:', dir)
+      })
+    })
   }
 }

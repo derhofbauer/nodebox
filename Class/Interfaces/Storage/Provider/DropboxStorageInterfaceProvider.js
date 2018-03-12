@@ -27,8 +27,9 @@ module.exports = class DropboxStorageInterfaceProvider {
       this.fetchFilesListFolderContinue()
     })
     this._mq.on('has_no_more', () => {
+      this._mq.emit('ready')
       this.subscribeLongPoll()
-      LogHandler.silly('DIR Server', this.dir())
+      // LogHandler.silly('DIR Server', this.dir())
     })
     this._mq.on('longpoll_continue', () => {
       this.subscribeLongPoll()
@@ -36,7 +37,7 @@ module.exports = class DropboxStorageInterfaceProvider {
   }
 
   go () {
-    this.fetchFileslistFolder().then(() => {
+    this.fetchFilesListFolder().then(() => {
       // LogHandler.silly("DIR Server", this.dir())
     }).catch((err) => {
       throw new Error(err)
@@ -107,9 +108,8 @@ module.exports = class DropboxStorageInterfaceProvider {
   /**
    * Fetch file list from Dropbox API and keep it updated
    * @since 1.0.0
-   * @todo Needs Testing!
    */
-  fetchFileslistFolder () {
+  fetchFilesListFolder () {
     return new Promise((resolve, reject) => {
       this.dbx.filesListFolder(
         this.getDefaultParams()
@@ -130,7 +130,6 @@ module.exports = class DropboxStorageInterfaceProvider {
    * Fetches the next bit of the file list from Dropbox API and emit an event to
    *   be called again, if there is something left.
    * @since 1.0.0
-   * @todo Needs Testing!
    */
   fetchFilesListFolderContinue () {
     this.dbx.filesListFolderContinue({
@@ -150,7 +149,6 @@ module.exports = class DropboxStorageInterfaceProvider {
    * @since 1.0.0
    * @param {Object.<string,*>} response Filelist or error from Dropbox API
    * @return {Promise<any>} Always resolves
-   * @todo Needs Testing!
    */
   handleFileListFolderResponse (response) {
     return new Promise((resolve) => {
@@ -175,7 +173,7 @@ module.exports = class DropboxStorageInterfaceProvider {
    */
   subscribeLongPoll () {
     if (!this._longpolling) {
-      this._longpolling = true // toggle the switch to enable on connection at once only
+      this._longpolling = true // toggle the switch to enable one connection at once only
 
       LogHandler.verbose('ServerFileListWorker:subscribeLongPoll')
       this.dbx.filesListFolderLongpoll({
@@ -209,7 +207,6 @@ module.exports = class DropboxStorageInterfaceProvider {
    *   config file.
    * @param {Object.<string,*>} response Fielist or error from Dropbox API
    * @since 1.0.0
-   * @todo Needs Testing!
    */
   handleCursor (response) {
     LogHandler.verbose('ServerFileListWorker:handleCursor', this.getLastCursor())
@@ -222,7 +219,6 @@ module.exports = class DropboxStorageInterfaceProvider {
    * Pushes an entry to the filelist
    * @param {Object.<string,*>} entry File or directory object from Dropbox API
    * @since 1.0.0
-   * @todo Needs Testing!
    */
   addEntryToList (entry) {
     this.filelist.push(entry)
@@ -232,7 +228,6 @@ module.exports = class DropboxStorageInterfaceProvider {
    * Removes an entry from the filelist
    * @param {Object.<string,*>} entry File or directory object from Dropbox API
    * @since 1.0.0
-   * @todo Needs Testing!
    */
   removeEntryFromList (entry) {
     _.remove(this.filelist, (value) => {
