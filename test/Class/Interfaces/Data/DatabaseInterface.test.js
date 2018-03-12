@@ -6,7 +6,7 @@ const fs = require('fs')
 chai.use(chaiAsPromised)
 
 const DATABASE_PATH = '/tmp/testdb.json'
-const TEST_FILE = {
+var TEST_FILE = {
   path_lower: 'foobar.test',
   size: 0,
   meta_data: "foo",
@@ -24,7 +24,7 @@ describe('DatabaseInterface', function () {
     fs.existsSync(DATABASE_PATH)
     done()
   })
-
+  
   it('should add data by given path and return object', function (done) {
     databaseInterface.addOrUpdateByPath(TEST_FILE).should.eventually.deep.equal(TEST_FILE).and.notify(done)
   })

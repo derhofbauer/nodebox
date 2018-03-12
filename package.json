@@ -52,7 +52,7 @@
     "lint": "yarn run eslint && yarn run standard",
     "test": "LOG_LEVEL='error' && mocha --recursive --exit",
     "test-watch": "LOG_LEVEL='error' && mocha --recursive --exit --watch",
-    "coverage": "LOG_LEVEL='error' && nyc --reporter=lcov mocha --recursive --exit && yarn run report",
+    "coverage": "LOG_LEVEL='error' && nyc --reporter=lcov --reporter=text mocha --recursive --exit && yarn run report",
     "coverage-html": "LOG_LEVEL='error' && nyc --reporter=html mocha --recursive --exit && yarn run report",
     "report": "nyc report",
     "attach": "docker exec -it nodebox_node_1 bash"
