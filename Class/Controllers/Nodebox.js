@@ -8,6 +8,8 @@ const LocalStorageWorker = require('../Workers/Storage/LocalStorageWorker')
 const CloudStorageWorker = require('../Workers/Storage/CloudStorageWorker')
 const MessageQueue = require('../Queues/MessageQueue')
 
+const MergeWorker = require('../Workers/MergeWorker')
+
 // const UploadWorker = require('../Workers/Transfer/UploadWorker')
 // const DownloadWorker = require('../Workers/Transfer/DownloadWorker')
 
@@ -53,6 +55,7 @@ module.exports = class Nodebox {
 
     this.setup().then(() => {
       this.startIndexers()
+      this.startMergeWorker()
     })
   }
 
@@ -123,16 +126,23 @@ module.exports = class Nodebox {
     this.CloudStorageWorker.go()
     LogHandler.debug('CloudStorageWorker started')
 
-    this.LocalStorageWorker.on('ready', () => {
-      this.LocalStorageWorker.StorageInterface.dir().then((dir) => {
-        console.log('Local:', dir)
-      })
-    })
+    // this.LocalStorageWorker.on('ready', () => {
+    //   this.LocalStorageWorker.StorageInterface.dir().then((dir) => {
+    //     console.log('Local:', dir)
+    //   })
+    // })
+    //
+    // this.CloudStorageWorker.on('ready', () => {
+    //   this.CloudStorageWorker.StorageInterface.dir().then((dir) => {
+    //     console.log('Cloud:', dir)
+    //   })
+    // })
+  }
 
-    this.CloudStorageWorker.on('ready', () => {
-      this.CloudStorageWorker.StorageInterface.dir().then((dir) => {
-        console.log('Cloud:', dir)
-      })
-    })
+  startMergeWorker () {
+    this.MergeWorker = new MergeWorker(
+      this.LocalStorageWorker,
+      this.CloudStorageWorker
+    )
   }
 }
