@@ -77,12 +77,21 @@ module.exports = class DropboxStorageInterfaceProvider {
   /**
    * Returns stats to one single entry. If the entry is not found in the cached
    *   filelist, the Dropbox API is requested.
-   * @param p
+   * @param {string} p Path in Dropobx
+   * @return {Promise<object>} Resolves to stats object, rejects if nothing found
    */
-  stats (p) {
-    p = path.addLeadingSlash(p)
+  stat (p) {
+    return new Promise((resolve, reject) => {
+      p = path.addLeadingSlash(p)
 
-    return _.find(this.filelist, {'path_lower': p.toLowerCase()})
+      let statsObject = _.find(this.filelist, {'path_lower': p.toLowerCase()})
+
+      if (statsObject !== undefined) {
+        resolve(statsObject)
+      } else {
+        reject()
+      }
+    })
   }
 
   getDefaultParams () {
