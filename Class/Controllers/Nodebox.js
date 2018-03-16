@@ -62,7 +62,7 @@ module.exports = class Nodebox {
   /**
    * Prompts the user for required config
    * @since 1.0.0
-   * @returns {Array<Promise>} Array of promises
+   * @returns {Promise<any>} Array of promises
    */
   setup () {
     return new Promise((resolve) => {
