@@ -83,7 +83,7 @@ module.exports = class DropboxStorageInterfaceProvider {
    *   is found in the database; default: true
    * @return {Promise<object>} Resolves to stats object, rejects if nothing found
    */
-  stat (p, forceApi = true) {
+  stat (p, forceApi = false) {
     return new Promise((resolve, reject) => {
       p = path.addLeadingSlash(p)
 
