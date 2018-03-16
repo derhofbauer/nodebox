@@ -79,15 +79,19 @@ module.exports = class DropboxStorageInterfaceProvider {
    * Returns stats to one single entry. If the entry is not found in the cached
    *   filelist, the Dropbox API is requested.
    * @param {string} p Path in Dropbox
+   * @param {boolean} forceApi If true, Dropbox API is requested, even if an entry
+   *   is found in the database; default: true
    * @return {Promise<object>} Resolves to stats object, rejects if nothing found
    */
   stat (p, forceApi = true) {
     return new Promise((resolve, reject) => {
       p = path.addLeadingSlash(p)
 
-      if (forceApi === false) {
-        let statsObject = _.find(this.filelist, {'path_lower': p.toLowerCase()})
-      }
+      /**
+       * @todo: This should only run, when forceApi === false, to prevent
+       * @todo: unnecessary disk access!
+       */
+      let statsObject = _.find(this.filelist, {'path_lower': p.toLowerCase()})
 
       if (forceApi === true || statsObject === undefined) {
         this.dbx.filesGetMetadata({
