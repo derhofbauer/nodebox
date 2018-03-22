@@ -40,7 +40,7 @@ module.exports = class DropboxStorageInterfaceProvider {
     this.fetchFilesListFolder().then(() => {
       // LogHandler.silly("DIR Server", this.dir())
     }).catch((err) => {
-      throw new Error(err)
+      throw new Error(err.error)
     })
   }
 
@@ -206,15 +206,18 @@ module.exports = class DropboxStorageInterfaceProvider {
         if (response.changes === false) {
           if (response.backoff) {
             setTimeout(() => {
+              this._longpolling = false
               this._mq.emit('longpoll_continue')
               LogHandler.silly(`backoff for ${response.backoff * 1000} seconds`)
             }, response.backoff * 1000)
           } else {
+            this._longpolling = false
             this._mq.emit('longpoll_continue')
           }
         }
 
         if (response.changes === true) {
+          this._longpolling = false
           this._mq.emit('longpoll_has_changes')
         }
       }).catch((err) => {
