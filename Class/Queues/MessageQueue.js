@@ -9,9 +9,9 @@ module.exports = class MessageQueue extends EventEmitter {
     this._mq = []
   }
 
-  push (item) {
+  push (item, eventName = 'new') {
     this._mq.push(item)
-    this.emit('new', item)
+    this.emit(eventName, item)
   }
 
   first () {

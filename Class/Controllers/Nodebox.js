@@ -142,7 +142,8 @@ module.exports = class Nodebox {
   startMergeWorker () {
     this.MergeWorker = new MergeWorker(
       this.LocalStorageWorker,
-      this.CloudStorageWorker
+      this.CloudStorageWorker,
+      this.DatabaseInterface
     )
   }
 }
