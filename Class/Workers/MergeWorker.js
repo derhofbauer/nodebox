@@ -3,12 +3,23 @@
 const WorkerBase = require('./WorkerBase')
 const LogHandler = require('../Handlers/Log/LogHandler')
 const _ = require('lodash')
+const async = require('async')
+
+const PARALLEL_LIMIT = process.env.PARALLEL_LIMIT || 2
 
 module.exports = class MergeWorker extends WorkerBase {
   constructor (LocalStorageWorker, CloudStorageWorker, DatabaseInterface) {
     super(LocalStorageWorker, CloudStorageWorker)
 
     this.DatabaseInterface = DatabaseInterface
+
+    this.q = async.queue(async (event) => {
+      this.mergeMetadata(event.path)
+    }, PARALLEL_LIMIT)
+
+    this.q.drain = () => {
+      LogHandler.debug('MergeWorker Work Queue: all items have been processed')
+    }
   }
 
   go () {
@@ -42,16 +53,19 @@ module.exports = class MergeWorker extends WorkerBase {
           let intersection = _.intersection(dirL, dirS)
           // console.log(intersection)
 
-          this.MessageQueue.on('new', (event) => {
-            if (event.path) {
-              this.mergeMetadata(event.path)
-            }
-          })
+          // this.MessageQueue.on('new', (event) => {
+          //   if (event.path) {
+          //     this.mergeMetadata(event.path)
+          //   }
+          // })
 
           intersection.forEach((value) => {
-            this.MessageQueue.push({
+            this.q.push({
               path: value
             })
+            // this.MessageQueue.push({
+            //   path: value
+            // })
           })
         })
       })
@@ -64,8 +78,8 @@ module.exports = class MergeWorker extends WorkerBase {
        *   DownloadWorker to push events to, when they finished transfering a
        *   file.
        */
-      }
     }
+  }
 
   /**
    * @todo NEEDS TESTING
@@ -74,43 +88,42 @@ module.exports = class MergeWorker extends WorkerBase {
    * @param path
    */
   mergeMetadata (path) {
-      this.CloudStorageWorker.StorageInterface.stat(path).then((cloudFile) => {
-        this.DatabaseInterface.getByPath(path).then((localFile) => {
+    this.CloudStorageWorker.StorageInterface.stat(path).then((cloudFile) => {
+      this.DatabaseInterface.getByPath(path).then((localFile) => {
           // console.log("path:", path)
           // console.log("stat:", cloudFile)
           // console.log("meta:", localFile)
-          if (localFile['.tag'] === 'folder') {
-            if (localFile.id === undefined) {
-              LogHandler.silly(`Folder ${path} will be updated in the database with API data`)
-              let merged = _.merge(localFile, cloudFile)
-              this.DatabaseInterface.addOrUpdateByPath(merged).then((newFolder) => {
-                LogHandler.silly(`Folder ${path} updated`, newFolder)
+        if (localFile['.tag'] === 'folder') {
+          if (localFile.id === undefined) {
+            LogHandler.silly(`Folder ${path} will be updated in the database with API data`)
+            let merged = _.merge(localFile, cloudFile)
+            this.DatabaseInterface.addOrUpdateByPath(merged).then((newFolder) => {
+              LogHandler.silly(`Folder ${path} updated`, newFolder)
+            })
+          } else {
+            LogHandler.silly(`Folder ${path} ignored, already identical on both ends.`)
+          }
+        }
+
+        if (localFile['.tag'] === 'file') {
+          if (this.metadataCanBeSynced(localFile, cloudFile)) {
+            if (!this.metadataIsEqual(localFile, cloudFile)) {
+              LogHandler.silly(`File ${path} will be updated in the database with API data`)
+              localFile = this.mergeMetadataObjects(localFile, cloudFile)
+              this.DatabaseInterface.addOrUpdateByPath(localFile).then((newFile) => {
+                LogHandler.silly(`File ${path} updated`, newFile)
               })
             } else {
-              LogHandler.silly(`Folder ${path} ignored, already identical on both ends.`)
+              LogHandler.silly(`File ${path} ignored, already identical on both ends.`)
             }
-          }
-
-          if (localFile['.tag'] === 'file') {
-            if (this.metadataCanBeSynced(localFile, cloudFile)) {
-              if (!this.metadataIsEqual(localFile, cloudFile)) {
-                LogHandler.silly(`File ${path} will be updated in the database with API data`)
-                localFile = this.mergeMetadataObjects(localFile, cloudFile)
-                this.DatabaseInterface.addOrUpdateByPath(localFile).then((newFile) => {
-                  LogHandler.silly(`File ${path} updated`, newFile)
-                })
-              } else {
-                LogHandler.silly(`File ${path} ignored, already identical on both ends.`)
-              }
-
-            } else {
-              LogHandler.silly(`File ${path} does not exist yet and will be downloaded with a new name`)
+          } else {
+            LogHandler.silly(`File ${path} does not exist yet and will be downloaded with a new name`)
               // download but rename
-            }
           }
-        })
+        }
       })
-    }
+    })
+  }
 
   /**
    * merge metadata objects
@@ -118,22 +131,22 @@ module.exports = class MergeWorker extends WorkerBase {
    * @param {object} cloudFile Metadata object from Dropbox API
    * @returns {object} merged Metadata object
    */
-    mergeMetadataObjects (localFile, cloudFile) {
-      localFile.id = cloudFile.id
-      localFile.server_modified = cloudFile.server_modified
-      localFile.rev = cloudFile.rev
+  mergeMetadataObjects (localFile, cloudFile) {
+    localFile.id = cloudFile.id
+    localFile.server_modified = cloudFile.server_modified
+    localFile.rev = cloudFile.rev
 
-      return localFile
-    }
+    return localFile
+  }
 
-    metadataCanBeSynced (localFile, cloudFile) {
-      return (
+  metadataCanBeSynced (localFile, cloudFile) {
+    return (
         localFile.size === cloudFile.size &&
         localFile.content_hash === cloudFile.content_hash
-      )
-    }
-    metadataIsEqual (localFile, cloudFile) {
-      if (
+    )
+  }
+  metadataIsEqual (localFile, cloudFile) {
+    if (
         localFile.name === cloudFile.name &&
         localFile.path_lower === cloudFile.path_lower &&
         localFile.path_display === cloudFile.path_display &&
@@ -143,10 +156,10 @@ module.exports = class MergeWorker extends WorkerBase {
         localFile.size === cloudFile.size &&
         localFile.content_hash === cloudFile.content_hash
       ) {
-        return true
-      } else {
-        LogHandler.silly(`File metadata objects differ`, _.difference(localFile, cloudFile))
-        return false
-      }
+      return true
+    } else {
+      LogHandler.silly(`File metadata objects differ`, _.difference(localFile, cloudFile))
+      return false
     }
+  }
   }
