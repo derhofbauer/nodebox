@@ -2,19 +2,40 @@
 
 const WorkerBase = require('./WorkerBase')
 const LogHandler = require('../Handlers/Log/LogHandler')
+const fs = require('../../Overrides/fs')
+const path = require('../../Overrides/path')
 const _ = require('lodash')
 const async = require('async')
+const https = require('https')
 
 const PARALLEL_LIMIT = process.env.PARALLEL_LIMIT || 2
 
+/**
+ * @todo This Class should only merge metadata of existing files.
+ *   UploadWorker and DownloadWorker need to generate their queues on
+ *   their own and handle them - no need for a worker handling other
+ *   workers!
+ * @todo This Class needs to provide a message queue for UploadWorker and
+ *   DownloadWorker to push events to, when they finished transfering a
+ *   file.
+ */
 module.exports = class MergeWorker extends WorkerBase {
   constructor (LocalStorageWorker, CloudStorageWorker, DatabaseInterface) {
     super(LocalStorageWorker, CloudStorageWorker)
 
     this.DatabaseInterface = DatabaseInterface
+    this.dbx = this.CloudStorageWorker.StorageInterface.StorageInterfaceProvider.dbx
 
     this.q = async.queue(async (event) => {
-      this.mergeMetadata(event.path)
+      if (event.type === 'merge') {
+        this.mergeMetadata(event.path)
+      }
+      if (event.type === 'download') {
+        this.handleDownload(event.path)
+      }
+      if (event.type === 'upload') {
+        this.handleUpload(event.path)
+      }
     }, PARALLEL_LIMIT)
 
     this.q.drain = () => {
@@ -34,9 +55,7 @@ module.exports = class MergeWorker extends WorkerBase {
       })
 
       /**
-       * + get differences for both local and server filelist and handle those
-       *     files.
-       * + for all other files, that live locally and remote, check hashes and
+       * for all other files, that live locally and remote, check hashes and
        *     download metadata (id, rev, etc.) if hashes are identical. In case
        *     they are not identical, handle the conflict.
        */
@@ -45,39 +64,27 @@ module.exports = class MergeWorker extends WorkerBase {
           let onlyLocal = dirL.filter(x => !dirS.includes(x))
           // console.log(onlyLocal)
           // this.dispatchLocalFiles(onlyLocal)
+          this.handleDownload('/.dotfiles')
 
           let onlyServer = dirS.filter(x => !dirL.includes(x))
-          // console.log(onlyServer)
-          // this.dispatchServerFiles(onlyServer)
+          onlyServer.forEach((value) => {
+            this.q.push({
+              type: 'download',
+              path: value
+            })
+          })
 
           let intersection = _.intersection(dirL, dirS)
           // console.log(intersection)
 
-          // this.MessageQueue.on('new', (event) => {
-          //   if (event.path) {
-          //     this.mergeMetadata(event.path)
-          //   }
-          // })
-
           intersection.forEach((value) => {
             this.q.push({
+              type: 'merge',
               path: value
             })
-            // this.MessageQueue.push({
-            //   path: value
-            // })
           })
         })
       })
-      /**
-       * @todo This Class should only merge metadata of existing files.
-       *   UploadWorker and DownloadWorker need to generate their queues on
-       *   their own and handle them - no need for a worker handling other
-       *   workers!
-       * @todo This Class needs to provide a message queue for UploadWorker and
-       *   DownloadWorker to push events to, when they finished transfering a
-       *   file.
-       */
     }
   }
 
@@ -125,6 +132,39 @@ module.exports = class MergeWorker extends WorkerBase {
     })
   }
 
+  handleDownload (path) {
+    LogHandler.silly(`MergeWorker: handle download of ${path}`)
+    /**
+     * + check if path does not exist locally, in order to avoid errors
+     * + if path does not exist on disk:
+     *   + download metadata and check if path is file or folder
+     *   + download file or create folder
+     *   + add metadata entry to database
+     */
+    console.log(path)
+    this.CloudStorageWorker.StorageInterface.stat(path).then((metadata) => {
+      let abspath = this.LocalStorageWorker.getAbsolutePathFromRelative(path)
+      // console.log(abspath)
+      // console.log(metadata)
+      if (metadata['.tag'] === 'folder') {
+        fs.mkdirIfNotExists(abspath).then(() => {
+          LogHandler.debug(`${path} created`)
+        }).catch((err) => {
+          LogHandler.error(err)
+          throw new Error(err)
+        })
+      }
+      }
+    }).catch((err) => {
+      LogHandler.error(err)
+    })
+  }
+
+
+  handleUpload (path) {
+
+  }
+
   /**
    * merge metadata objects
    * @param {object} localFile Metadata object from local database
@@ -162,4 +202,4 @@ module.exports = class MergeWorker extends WorkerBase {
       return false
     }
   }
-  }
+}
