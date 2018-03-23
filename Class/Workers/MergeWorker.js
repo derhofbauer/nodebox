@@ -154,12 +154,55 @@ module.exports = class MergeWorker extends WorkerBase {
           throw new Error(err)
         })
       }
+      if (metadata['.tag'] === 'file') {
+        this.downloadFileStream(path, abspath).then((response) => {
+          if (response.error_summary) {
+            LogHandler.error(response.error_summary)
+          } else {
+            this.LocalStorageWorker.DatabaseInterface.addOrUpdateByPath(response).then((file) => {
+              console.log("##", response)
+            })
+          }
+        }).catch((err) => {
+          LogHandler.error(err)
+          throw err
+        })
       }
     }).catch((err) => {
       LogHandler.error(err)
     })
   }
 
+  /**
+   * Streams a file from the Dropbox API to a local file
+   * based upon https://github.com/dropbox/dropbox-sdk-js/issues/139#issuecomment-308444157
+   * @since 1.0.0
+   * @param {string} pathOnDropbox
+   * @param {string} absoluteFilesystemPath Path to store the downloaded file to
+   * @returns {Promise<any>} Resolves on success, rejects on error
+   */
+  downloadFileStream (pathOnDropbox, absoluteFilesystemPath) {
+    return new Promise ((resolve, reject) => {
+      this.dbx.filesGetTemporaryLink({
+        path: pathOnDropbox
+      }).then((result) => {
+        LogHandler.silly(`Attempting to download ${pathOnDropbox}`)
+        let req = https.get(result.link, (res) => {
+          res.pipe(fs.createWriteStream(path.resolve(absoluteFilesystemPath), {flags: 'wx'}))
+        })
+        req.on('close', () => {
+          resolve(result.metadata)
+        })
+        req.on('error', (error) => {
+          LogHandler.error(error)
+          reject(error)
+        })
+      }).catch((err) => {
+        LogHandler.error(err)
+        reject(err)
+      })
+    })
+  }
 
   handleUpload (path) {
 
