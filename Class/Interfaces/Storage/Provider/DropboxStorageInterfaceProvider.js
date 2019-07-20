@@ -40,7 +40,7 @@ module.exports = class DropboxStorageInterfaceProvider {
     this.fetchFilesListFolder().then(() => {
       // LogHandler.silly("DIR Server", this.dir())
     }).catch((err) => {
-      throw new Error(err)
+      throw new Error(err.error)
     })
   }
 
@@ -78,19 +78,35 @@ module.exports = class DropboxStorageInterfaceProvider {
   /**
    * Returns stats to one single entry. If the entry is not found in the cached
    *   filelist, the Dropbox API is requested.
-   * @param {string} p Path in Dropobx
+   * @param {string} p Path in Dropbox
+   * @param {boolean} forceApi If true, Dropbox API is requested, even if an entry
+   *   is found in the database; default: true
    * @return {Promise<object>} Resolves to stats object, rejects if nothing found
    */
-  stat (p) {
+  stat (p, forceApi = false) {
     return new Promise((resolve, reject) => {
       p = path.addLeadingSlash(p)
 
+      /**
+       * @todo: This should only run, when forceApi === false, to prevent
+       * @todo: unnecessary disk access!
+       */
       let statsObject = _.find(this.filelist, {'path_lower': p.toLowerCase()})
 
-      if (statsObject !== undefined) {
+      if (forceApi === true || statsObject === undefined) {
+        this.dbx.filesGetMetadata({
+          path: p
+        }).then((metadata) => {
+          resolve(metadata)
+        }).catch((err) => {
+          reject(err)
+        })
+      }
+
+      if (statsObject !== undefined && forceApi === false) {
         resolve(statsObject)
       } else {
-        reject()
+        reject(new Error('Unable to fetch stats'))
       }
     })
   }
@@ -108,6 +124,7 @@ module.exports = class DropboxStorageInterfaceProvider {
   /**
    * Fetch file list from Dropbox API and keep it updated
    * @since 1.0.0
+   * @return {Promise<Object>} Dropbox API response object
    */
   fetchFilesListFolder () {
     return new Promise((resolve, reject) => {
@@ -118,7 +135,9 @@ module.exports = class DropboxStorageInterfaceProvider {
           resolve(this.filelist)
         })
 
-        this.handleFileListFolderResponse(response)
+        this.handleFileListFolderResponse(response).then(() => {
+          LogHandler.silly('API response successfully dispatched')
+        })
       }).catch((err) => {
         // LogHandler.error(err)
         reject(err)
@@ -138,7 +157,9 @@ module.exports = class DropboxStorageInterfaceProvider {
       // LogHandler.verbose('fetchFilesListFolderContinue:then', response)
       console.debug(response)
 
-      this.handleFileListFolderResponse(response)
+      this.handleFileListFolderResponse(response).then(() => {
+        LogHandler.silly('API response successfully dispatched')
+      })
     }).catch((err) => {
       LogHandler.error(err)
     })
@@ -164,6 +185,7 @@ module.exports = class DropboxStorageInterfaceProvider {
       if (response.has_more === false) {
         this._mq.emit('has_no_more')
       }
+      resolve()
     })
   }
 
@@ -184,15 +206,18 @@ module.exports = class DropboxStorageInterfaceProvider {
         if (response.changes === false) {
           if (response.backoff) {
             setTimeout(() => {
+              this._longpolling = false
               this._mq.emit('longpoll_continue')
               LogHandler.silly(`backoff for ${response.backoff * 1000} seconds`)
             }, response.backoff * 1000)
           } else {
+            this._longpolling = false
             this._mq.emit('longpoll_continue')
           }
         }
 
         if (response.changes === true) {
+          this._longpolling = false
           this._mq.emit('longpoll_has_changes')
         }
       }).catch((err) => {
