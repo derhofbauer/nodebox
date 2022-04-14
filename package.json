@@ -6,7 +6,7 @@
   "author": "Alexander Hofbauer",
   "license": "MIT",
   "dependencies": {
-    "async": "^3.1.0",
+    "async": "^3.2.2",
     "chokidar": "^3.0.2",
     "cli-spinner": "^0.2.10",
     "dropbox": "^4.0.28",
